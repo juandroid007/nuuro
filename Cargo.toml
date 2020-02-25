@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "nuuro",
+    "nuuro_build",
+    "example",
+]

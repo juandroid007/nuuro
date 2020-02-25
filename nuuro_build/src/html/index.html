@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+		<style>
+			* {
+				margin:0;
+				padding:0;
+			}
+			html, body {
+				width:100%;
+				height:100%;
+				background-color: black;
+			}
+			canvas {
+				display: block;
+				background-color: black;
+			}
+			video {
+				display: none;
+			}
+			#nuuro-wrapper-div {
+				display: block;
+				width: 100%;
+				height: 100%;
+				background-color: black;
+				overflow: hidden
+			}
+			h1 {
+				font-family:Arial, Helvetica, sans-serif;
+				font-size:50px;
+				color:white;
+				text-align:center;padding-top:25px;
+			}
+			p {
+				font-family:Arial, Helvetica, sans-serif;
+				font-size:16px;
+				color:white;
+				text-align:center;
+				padding-top:25px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="nuuro-wrapper-div">
+			<h1 id="loading-notice" style="display:none">Loading…</h1>
+			<h1 id="load-percent" style="display:none">0%</h1>
+			<h1 id="error-notice" style="display:none">Error</h1>
+			<p id="error-text" style="display:none"></p>
+			<canvas id="nuuro-canvas" style="display:none"></canvas>
+		</div>
+	</body>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.3/howler.min.js"></script>
+	<script src="nuuro.js"></script>
+	<script>
+		var nuuroDiv = document.getElementById("nuuro-wrapper-div");
+		var nuuroCanvas = document.getElementById("nuuro-canvas");
+		var loadingNotice = document.getElementById("loading-notice");
+		var loadPercent = document.getElementById("load-percent");
+		var errorNotice = document.getElementById("error-notice");
+		var errorText = document.getElementById("error-text");
+
+		loadingNotice.style.display = "block";
+		loadPercent.style.display = "block";
+
+		function onloadprogress(coreRatio, extraResourcesRatio) {
+			loadPercent.innerHTML = Math.round(50 * coreRatio + 50 * extraResourcesRatio) + "%";
+		}
+
+		function onload() {
+			loadingNotice.style.display = "none";
+			loadPercent.style.display = "none";
+			nuuroCanvas.style.display = "block";
+		}
+
+		function onerror(err) {
+			nuuroCanvas.style.display = "none";
+			loadingNotice.style.display = "none";
+			loadPercent.style.display = "none";
+			errorNotice.style.display = "block";
+			errorText.style.display = "block";
+			errorText.appendChild(document.createTextNode("An exception was thrown: " + err));
+		}
+
+		nuuro({
+			wrapperDiv: nuuroDiv,
+			canvas: nuuroCanvas,
+			wasmFilePath: "nuuro_app.wasm",
+			onloadprogress: onloadprogress,
+			onload: onload,
+			onerror: onerror
+		});
+	</script>
+</html>

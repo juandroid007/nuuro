@@ -1,0 +1,14 @@
+# Note: the Nuuro dependencies below specify a relative path, but in practice
+# you should use the latest version on crates.io
+
+[package]
+name = "example"
+version = "0.1.0"
+edition = "2018"
+authors = ["Juan Villacorta <juanvillacortac@gmail.com>"]
+
+[dependencies]
+nuuro = { path = "../nuuro" }
+
+[build-dependencies]
+nuuro_build = { path = "../nuuro_build" }
