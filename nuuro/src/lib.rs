@@ -24,10 +24,6 @@
 //! invoking functionality from the sibling crate "nuuro_build".
 //! This will generate texture atlases and enums to reference assets.
 //! See the "nuuro_build" crate for more details.
-//!
-//! # Example usage
-//!
-//! For a full example, see <https://github.com/juandroid007/nuuro/tree/master/example>.
 
 extern crate byteorder;
 #[cfg(not(target_arch = "wasm32"))]
