@@ -35,7 +35,7 @@ impl CoreRenderer {
 
     pub(in crate::renderer) fn clear(&mut self, color: (u8, u8, u8)) {
         unsafe {
-            nuuroroWasmClear(
+            nuuroWasmClear(
                 color.0 as f32 / 255.,
                 color.1 as f32 / 255.,
                 color.2 as f32 / 255.,
@@ -45,7 +45,7 @@ impl CoreRenderer {
 
     pub(in crate::renderer) fn draw_sprites(&mut self, r: &mut RenderBuffer) {
         unsafe {
-            nuuroroWasmDrawSprites(
+            nuuroWasmDrawSprites(
                 mem::size_of::<f32>() * r.vbo_data.len(),
                 mem::transmute(&r.vbo_data[0]),
             );
