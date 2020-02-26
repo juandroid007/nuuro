@@ -58,6 +58,11 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, app: 
     core::run(info, app);
 }
 
+/// Simple function to print a message in the console of the current target.
+pub fn println(string: String) {
+    core::println(string);
+}
+
 /// Trait that a user can implement to specify application behavior, passed into `nuuro::run(...)`.
 pub trait App<A: AppAssetId> {
     /// Invoked when the application is first started, default behavior is a no-op.

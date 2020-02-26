@@ -20,6 +20,7 @@ use std::collections::HashSet;
 use std::io::Cursor;
 use std::mem;
 use std::os::raw::{c_int, c_void};
+use std::ffi::CString;
 
 use self::wasm_imports::*;
 use super::mark_app_created_flag;
@@ -249,4 +250,14 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, app: 
         last_time_sec: None,
         held_keys: HashSet::new(),
     }));
+}
+
+pub fn println(string: String) {
+    let c_string = CString::new(string)
+        .unwrap()
+        .into_raw();
+
+    unsafe {
+        nuuroWasmConsoleLog(c_string);
+    }
 }

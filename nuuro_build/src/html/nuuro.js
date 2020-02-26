@@ -218,6 +218,9 @@ function nuuro(args) {
         nuuroWasmWriteCookie: function (size, dataPtr) {
           writeCookie(bytesToBase64(new Uint8Array(Module.memory.buffer, dataPtr, size)));
         },
+        nuuroWasmConsoleLog: function (string) {
+          console.log(`%c${readCStr(string)}`, "font-weight:bold;");
+        },
         Math_atan2: Math.atan2,
         cos: Math.cos,
         sin: Math.sin,

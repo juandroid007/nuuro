@@ -157,6 +157,10 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
     }
 }
 
+pub fn println(string: String) {
+    println!("{}", string);
+}
+
 fn build_renderer<AS: AppAssetId>(info: &AppInfo, sdl_renderer: &SdlRenderer) -> Renderer<AS> {
     let sprites_atlas =
         Atlas::new(BufReader::new(File::open("assets/sprites.atlas").unwrap())).unwrap();
