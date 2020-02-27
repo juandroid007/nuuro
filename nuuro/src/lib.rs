@@ -41,6 +41,8 @@ pub mod renderer;
 #[cfg(target_arch = "wasm32")]
 pub use crate::core::{wasm_exports, wasm_imports};
 
+pub use crate::core::println;
+
 pub use crate::app_context::{AppContext, Audio};
 pub use crate::app_info::AppInfo;
 pub use crate::input::KeyCode;
@@ -58,9 +60,12 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, app: 
     core::run(info, app);
 }
 
-/// Simple function to print a message in the console of the current target.
-pub fn println(string: String) {
-    core::println(string);
+/// Simple macro to print a message in the console of the current target.
+#[macro_export]
+macro_rules! nuuro_println {
+    ($($t: tt )*) => {
+        ::nuuro::println(format!($($t)*));
+    };
 }
 
 /// Trait that a user can implement to specify application behavior, passed into `nuuro::run(...)`.

@@ -113,14 +113,17 @@ macro_rules! nuuro_header {
     () => {
         pub mod nuuro_wasm_exports {
             use std::os::raw::{c_char, c_int, c_void};
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmInit() {
                 ::nuuro::wasm_exports::nuuroWasmInit()
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmOnResize(w: c_int, h: c_int) {
                 ::nuuro::wasm_exports::nuuroWasmOnResize(w, h)
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmUpdateAndDraw(
                 time_millis: f64,
@@ -129,10 +132,12 @@ macro_rules! nuuro_header {
             ) -> c_int {
                 ::nuuro::wasm_exports::nuuroWasmUpdateAndDraw(time_millis, cursor_x, cursor_y)
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmKeyEvent(code: c_int, down: bool) -> c_int {
                 ::nuuro::wasm_exports::nuuroWasmKeyEvent(code, down)
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmMouseEvent(
                 cursor_x: c_int,
@@ -142,30 +147,37 @@ macro_rules! nuuro_header {
             ) -> c_int {
                 ::nuuro::wasm_exports::nuuroWasmMouseEvent(cursor_x, cursor_y, button, down)
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmIsAppDefined() -> c_int {
                 ::nuuro::wasm_exports::nuuroWasmIsAppDefined()
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmMusicCount() -> c_int {
                 ::nuuro::wasm_exports::nuuroWasmMusicCount()
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmSoundCount() -> c_int {
                 ::nuuro::wasm_exports::nuuroWasmSoundCount()
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmSpriteVertSrc() -> *const c_char {
                 ::nuuro::wasm_exports::nuuroWasmSpriteVertSrc()
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmSpriteFragSrc() -> *const c_char {
                 ::nuuro::wasm_exports::nuuroWasmSpriteFragSrc()
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmOnRestart() {
                 ::nuuro::wasm_exports::nuuroWasmOnRestart()
             }
+
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmCookieDataPtr(size: usize) -> *mut c_void {
                 ::nuuro::wasm_exports::nuuroWasmCookieDataPtr(size)

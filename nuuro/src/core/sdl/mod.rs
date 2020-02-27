@@ -157,6 +157,7 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
     }
 }
 
+#[allow(dead_code)]
 pub fn println(string: String) {
     println!("{}", string);
 }
