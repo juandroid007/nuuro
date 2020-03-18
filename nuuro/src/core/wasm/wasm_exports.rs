@@ -20,8 +20,38 @@
 use std::os::raw::{c_char, c_int, c_void};
 
 use super::{app_runner_borrow, app_runner_borrow_mut, app_runner_is_defined};
-use crate::input::KeyCode;
+use crate::input::{KeyCode, TouchPoint};
 use crate::renderer::shaders;
+
+#[repr(transparent)]
+pub struct JsInteropString(*mut String);
+
+impl JsInteropString {
+    // Unsafe because we create a string and say it's full of valid
+    // UTF-8 data, but it isn't!
+    pub unsafe fn with_capacity(cap: usize) -> Self {
+        let mut d = Vec::with_capacity(cap);
+        d.set_len(cap);
+        let s = Box::new(String::from_utf8_unchecked(d));
+        JsInteropString(Box::into_raw(s))
+    }
+
+    pub unsafe fn as_string(&self) -> &String {
+        &*self.0
+    }
+
+    pub unsafe fn as_mut_string(&mut self) -> &mut String {
+        &mut *self.0
+    }
+
+    pub unsafe fn into_boxed_string(self) -> Box<String> {
+        Box::from_raw(self.0)
+    }
+
+    pub unsafe fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.as_mut_string().as_mut_vec().as_mut_ptr()
+    }
+}
 
 pub fn nuuroWasmInit() {
     app_runner_borrow_mut().init();
@@ -31,8 +61,17 @@ pub fn nuuroWasmOnResize(w: c_int, h: c_int) {
     app_runner_borrow_mut().resize((w as u32, h as u32));
 }
 
-pub fn nuuroWasmUpdateAndDraw(time_millis: f64, cursor_x: c_int, cursor_y: c_int) -> c_int {
+pub fn nuuroWasmUpdateAndDraw(
+    time_millis: f64,
+    cursor_x: c_int,
+    cursor_y: c_int,
+    touchesPos: JsInteropString,
+) -> c_int {
+    let touchesPos = unsafe { touchesPos.into_boxed_string() };
+    let touchesPos: Vec<TouchPoint> = serde_json::from_str(&touchesPos).unwrap_or(Vec::new());
+
     app_runner_borrow_mut().update_cursor(cursor_x as i32, cursor_y as i32);
+    app_runner_borrow_mut().update_touches(touchesPos);
     let continuing = app_runner_borrow_mut().update_and_draw(time_millis / 1000.0);
     if continuing {
         1
@@ -72,6 +111,21 @@ pub fn nuuroWasmMouseEvent(cursor_x: c_int, cursor_y: c_int, button: c_int, down
     }
 }
 
+pub fn nuuroWasmTouchEvent(touchesPos: JsInteropString, down: bool) -> c_int {
+    let touchesPos = unsafe { touchesPos.into_boxed_string() };
+    let touchesPos: Vec<TouchPoint> = serde_json::from_str(&touchesPos).unwrap_or(Vec::new());
+
+    app_runner_borrow_mut().update_touches(touchesPos);
+
+    let continuing = app_runner_borrow_mut().input(KeyCode::Touch, down);
+
+    if continuing {
+        1
+    } else {
+        0
+    }
+}
+
 pub fn nuuroWasmIsAppDefined() -> c_int {
     if app_runner_is_defined() {
         1
@@ -104,6 +158,18 @@ pub fn nuuroWasmCookieDataPtr(size: usize) -> *mut c_void {
     app_runner_borrow_mut().cookie_buffer(size).as_mut_ptr() as *mut c_void
 }
 
+pub unsafe fn nuuroWasmStringPrepare(cap: usize) -> JsInteropString {
+    JsInteropString::with_capacity(cap)
+}
+
+pub unsafe fn nuuroWasmStringData(mut s: JsInteropString) -> *mut u8 {
+    s.as_mut_ptr()
+}
+
+pub unsafe fn nuuroWasmStringLen(s: JsInteropString) -> usize {
+    s.as_string().len()
+}
+
 /// Macro to be placed in the `main.rs` file for a Nuuro app.
 ///
 /// Currently, the only use this macro has is to export WASM functions for the app
@@ -113,6 +179,7 @@ macro_rules! nuuro_header {
     () => {
         pub mod nuuro_wasm_exports {
             use std::os::raw::{c_char, c_int, c_void};
+            use ::nuuro::wasm_exports::JsInteropString;
 
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmInit() {
@@ -129,8 +196,14 @@ macro_rules! nuuro_header {
                 time_millis: f64,
                 cursor_x: c_int,
                 cursor_y: c_int,
+                touchesPos: JsInteropString,
             ) -> c_int {
-                ::nuuro::wasm_exports::nuuroWasmUpdateAndDraw(time_millis, cursor_x, cursor_y)
+                ::nuuro::wasm_exports::nuuroWasmUpdateAndDraw(
+                    time_millis,
+                    cursor_x,
+                    cursor_y,
+                    touchesPos,
+                )
             }
 
             #[no_mangle]
@@ -146,6 +219,14 @@ macro_rules! nuuro_header {
                 down: bool,
             ) -> c_int {
                 ::nuuro::wasm_exports::nuuroWasmMouseEvent(cursor_x, cursor_y, button, down)
+            }
+
+            #[no_mangle]
+            pub unsafe extern "C" fn nuuroWasmTouchEvent(
+                touchesPos: JsInteropString,
+                down: bool,
+            ) -> c_int {
+                ::nuuro::wasm_exports::nuuroWasmTouchEvent(touchesPos, down)
             }
 
             #[no_mangle]
@@ -181,6 +262,21 @@ macro_rules! nuuro_header {
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmCookieDataPtr(size: usize) -> *mut c_void {
                 ::nuuro::wasm_exports::nuuroWasmCookieDataPtr(size)
+            }
+
+            #[no_mangle]
+            pub unsafe extern "C" fn nuuroWasmStringPrepare(cap: usize) -> JsInteropString {
+                ::nuuro::wasm_exports::nuuroWasmStringPrepare(cap)
+            }
+
+            #[no_mangle]
+            pub unsafe extern "C" fn nuuroWasmStringData(mut s: JsInteropString) -> *mut u8 {
+                ::nuuro::wasm_exports::nuuroWasmStringData(s)
+            }
+
+            #[no_mangle]
+            pub unsafe extern "C" fn nuuroWasmStringLen(s: JsInteropString) -> usize {
+                ::nuuro::wasm_exports::nuuroWasmStringLen(s)
             }
         }
     };

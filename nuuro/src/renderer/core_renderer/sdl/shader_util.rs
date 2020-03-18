@@ -41,8 +41,7 @@ pub fn compile_shader(src: *const c_char, ty: GLenum) -> GLuint {
             );
             panic!(
                 "{}",
-                str::from_utf8(&buf)
-                    .expect("glGetShaderInfoLog returned invalid utf8")
+                str::from_utf8(&buf).expect("glGetShaderInfoLog returned invalid utf8")
             );
         }
         shader
@@ -72,8 +71,7 @@ pub fn link_program(vs: GLuint, fs: GLuint) -> GLuint {
             );
             panic!(
                 "{}",
-                str::from_utf8(&buf)
-                    .expect("glGetProgramInfoLog returned invalid utf8")
+                str::from_utf8(&buf).expect("glGetProgramInfoLog returned invalid utf8")
             );
         }
         program

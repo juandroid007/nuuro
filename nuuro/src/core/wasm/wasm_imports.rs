@@ -15,7 +15,7 @@
 //! This module contains methods imported from the nuuro javascript code for WebAssembly.
 //! DO NOT USE DIRECTLY!
 
-use std::os::raw::{c_int, c_void, c_char};
+use std::os::raw::{c_char, c_int, c_void};
 
 extern "C" {
     pub fn nuuroWasmSetScissor(x: c_int, y: c_int, w: c_int, h: c_int);

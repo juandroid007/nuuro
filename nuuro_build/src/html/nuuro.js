@@ -38,6 +38,7 @@ function nuuro(args) {
   const onerror = args.onerror;
   const readCookie = args.readCookie;
   const writeCookie = args.writeCookie;
+  const useMouseOnTouch = args.useMouseOnTouch;
 
   var nuuroIsBroken = false;
   var Module = {};
@@ -53,6 +54,7 @@ function nuuro(args) {
     }
     Module = { currentlyRunning: false };
     if (onerror) {
+      console.log(err);
       onerror(err);
     } else {
       throw err;
@@ -114,6 +116,7 @@ function nuuro(args) {
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
 
     var cursorPos = { x: 0, y: 0 };
+    var touchesPos = [];
 
     function setSpriteAttribPointers () {
       gl.vertexAttribPointer(Module.spriteProg.attribs.vert, 2, gl.FLOAT, false, 7 * floatSize, 0);
@@ -268,12 +271,17 @@ function nuuro(args) {
         Module.nuuroWasmUpdateAndDraw = mod.exports.nuuroWasmUpdateAndDraw;
         Module.nuuroWasmKeyEvent = mod.exports.nuuroWasmKeyEvent;
         Module.nuuroWasmMouseEvent = mod.exports.nuuroWasmMouseEvent;
+        Module.nuuroWasmTouchEvent = mod.exports.nuuroWasmTouchEvent;
         Module.nuuroWasmMusicCount = mod.exports.nuuroWasmMusicCount;
         Module.nuuroWasmSoundCount = mod.exports.nuuroWasmSoundCount;
         Module.nuuroWasmSpriteVertSrc = mod.exports.nuuroWasmSpriteVertSrc;
         Module.nuuroWasmSpriteFragSrc = mod.exports.nuuroWasmSpriteFragSrc;
         Module.nuuroWasmOnRestart = mod.exports.nuuroWasmOnRestart;
         Module.nuuroWasmCookieDataPtr = mod.exports.nuuroWasmCookieDataPtr;
+
+        Module.nuuroWasmStringPrepare = mod.exports.nuuroWasmStringPrepare;
+        Module.nuuroWasmStringData = mod.exports.nuuroWasmStringData;
+        Module.nuuroWasmStringLen = mod.exports.nuuroWasmStringLen;
         tryStart();
       } catch(err) { nuuroFail(err); }
     }).catch(nuuroFail);
@@ -412,10 +420,10 @@ function nuuro(args) {
           canvas.addEventListener('mousemove', e => handleMouseMotion(e));
           canvas.addEventListener('mousedown', e => handleMouseEvent(e, true));
           canvas.addEventListener('mouseup', e => handleMouseEvent(e, false));
-          canvas.addEventListener("touchstart", handleTouchStart, false);
-          canvas.addEventListener("touchend", handleTouchEnd, false);
-          canvas.addEventListener("touchcancel", handleTouchEnd, false);
-          canvas.addEventListener("touchmove", handleTouchMove, false);
+          canvas.addEventListener('touchstart', handleTouchStart, false);
+          canvas.addEventListener('touchend', handleTouchEnd, false);
+          canvas.addEventListener('touchcancel', handleTouchEnd, false);
+          canvas.addEventListener('touchmove', handleTouchMove, false);
         } catch(err) { nuuroFail(err); }
       }
     }
@@ -425,7 +433,12 @@ function nuuro(args) {
       try {
         if (Module.currentlyRunning) {
           resizeCanvas();
-          const continuing = Module.nuuroWasmUpdateAndDraw(now, cursorPos.x, cursorPos.y);
+          const continuing = Module.nuuroWasmUpdateAndDraw(
+            now,
+            cursorPos.x,
+            cursorPos.y,
+            writeCStr(JSON.stringify(touchesPos))
+          );
           if (!continuing) {
             quitApp();
           }
@@ -470,16 +483,49 @@ function nuuro(args) {
       }
     }
 
-    var currentTouchId = undefined;
+    function handleTouchEvent(down) {
+      if (Module.currentlyRunning) {
+        try {
+          const continuing = Module.nuuroWasmTouchEvent(writeCStr(JSON.stringify(touchesPos)), down)
+          if (!continuing) {
+            quitApp();
+          }
+        } catch(err) { nuuroFail(err); }
+      }
+    }
 
     function handleTouchStart(evt) {
       if (Module.currentlyRunning) {
         try {
           evt.preventDefault();
-          if (currentTouchId === undefined && evt.changedTouches.length > 0) {
-            var touch = evt.changedTouches[0];
-            currentTouchId = touch.identifier;
-            handleMouseEvent({ clientX: touch.clientX, clientY: touch.clientY, button: 0 }, true);
+          // console.log(evt);
+          // if (currentTouchId === undefined && evt.changedTouches.length > 0) {
+          //   var touch = evt.changedTouches[0];
+          //   currentTouchId = touch.identifier;
+          //   handleMouseEvent({ clientX: touch.clientX, clientY: touch.clientY, button: 0 }, true);
+          // }
+          // console.log("Start: ", evt);
+          if (evt.changedTouches.length > 0) {
+            touched = true;
+            var touches = evt.changedTouches;
+            let firstTouch;
+            for (var i = 0; i < touches.length; i++) {
+              if (touches[i].identifier === 0) firstTouch = touches[i];
+              const changedTouch = touchesPos.find((t, j) => {
+                if (t.id === touches[i].identifier) {
+                  const x = touches[i].clientX * (canvas.width / canvas.clientWidth);
+                  const y = touches[i].clientY * (canvas.height / canvas.clientHeight);
+                  touchesPos[j] = { id: touches[i].identifier, x, y };
+                  return true;
+                }
+              });
+              if (!changedTouch)
+                touchesPos.push({ id: touches[i].identifier, x: touches[i].clientX, y: touches[i].clientY });
+            }
+            handleTouchEvent(true);
+            if (useMouseOnTouch && firstTouch) {
+              handleMouseEvent({ clientX: firstTouch.clientX, clientY: touches[0].clientY, button: 0 }, true);
+            }
           }
         } catch(err) { nuuroFail(err); }
       }
@@ -489,14 +535,33 @@ function nuuro(args) {
       if (Module.currentlyRunning) {
         try {
           evt.preventDefault();
-          if (currentTouchId !== undefined) {
-            for (var i = 0; i < evt.changedTouches.length; i++) {
-              var touch = evt.changedTouches[i];
-              if (touch.identifier === currentTouchId) {
-                currentTouchId = undefined;
-                handleMouseEvent({ clientX: touch.clientX, clientY: touch.clientY, button: 0 }, false);
-                return;
-              }
+          // if (currentTouchId !== undefined) {
+          //   for (var i = 0; i < evt.changedTouch.length; i++) {
+          //     var touch = evt.changedTouches[i];
+          //     if (touch.identifier === currentTouchesId) {
+          //       currentTouchId = undefined;
+          //       handleMouseEvent({ clientX: touch.clientX, clientY: touch.clientY, button: 0 }, false);
+          //       return;
+          //     }
+          //   }
+          // }
+          // console.log("End: ", evt);
+          if (touchesPos.length > 0) {
+            touched = false;
+            var touches = evt.changedTouches;
+            let firstTouch;
+            for (var i = 0; i < touches.length; i++) {
+              if (touches[i].identifier === 0) firstTouch = touches[i];
+              touchesPos.find((t, j) => {
+                if (t.id === touches[i].identifier) {
+                  touchesPos.splice(j, 1);
+                  return true;
+                }
+              });
+            }
+            handleTouchEvent(false);
+            if (useMouseOnTouch && firstTouch) {
+              handleMouseEvent({ clientX: firstTouch.clientX, clientY: firstTouch.clientY, button: 0 }, false);
             }
           }
         } catch(err) { nuuroFail(err); }
@@ -507,13 +572,32 @@ function nuuro(args) {
       if (Module.currentlyRunning) {
         try {
           evt.preventDefault();
-          if (currentTouchId !== undefined) {
-            for (var i = 0; i < evt.changedTouches.length; i++) {
-              var touch = evt.changedTouches[i];
-              if (touch.identifier === currentTouchId) {
-                handleMouseMotion(touch);
-                return;
-              }
+          // if (currentTouchId !== undefined) {
+          //   for (var i = 0; i < evt.changedTouches.length; i++) {
+          //     var touch = evt.changedTouches[i];
+          //     if (touch.identifier === currentTouchId) {
+          //       handleMouseMotion(touch);
+          //       return;
+          //     }
+          //   }
+          // }
+          // console.log("Move: ", evt);
+          if (touchesPos.length > 0) {
+            const touches = evt.changedTouches;
+            let firstTouch;
+            for (var i = 0; i < touches.length; i++) {
+              if (touches[i].identifier === 0) firstTouch = touches[i];
+              touchesPos.find((t, j) => {
+                if (t.id === touches[i].identifier) {
+                  const x = touches[i].clientX * (canvas.width / canvas.clientWidth);
+                  const y = touches[i].clientY * (canvas.height / canvas.clientHeight);
+                  touchesPos[j] = { id: touches[i].identifier, x, y };
+                  return true;
+                }
+              });
+            }
+            if (useMouseOnTouch && firstTouch) {
+              handleMouseMotion(firstTouch);
             }
           }
         } catch(err) { nuuroFail(err); }
@@ -539,6 +623,25 @@ function nuuro(args) {
         gl.viewport(0, 0, canvas.width, canvas.height);
         Module.nuuroWasmOnResize(canvas.width, canvas.height);
       }
+    }
+
+    function writeCStr(buffer) {
+      const { memory, nuuroWasmStringPrepare, nuuroWasmStringData } = Module;
+
+      const encoder = new TextEncoder();
+      const encodedString = encoder.encode(buffer);
+
+      // Ask Rust code to allocate a string inside of the module's memory
+      const rustString = nuuroWasmStringPrepare(encodedString.length);
+
+      // Get a JS view of the string data
+      const rustStringData = nuuroWasmStringData(rustString);
+      const asBytes = new Uint8Array(memory.buffer, rustStringData, encodedString.length);
+
+      // Copy the UTF-8 into the WASM memory.
+      asBytes.set(encodedString);
+
+      return rustString;
     }
 
     function readCStr(ptr) {

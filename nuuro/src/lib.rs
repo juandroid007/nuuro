@@ -30,6 +30,10 @@ extern crate byteorder;
 extern crate gl;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate sdl2;
+#[cfg(target_arch = "wasm32")]
+extern crate serde;
+#[cfg(target_arch = "wasm32")]
+extern crate serde_json;
 
 mod app_context;
 mod app_info;
@@ -45,7 +49,7 @@ pub use crate::core::println;
 
 pub use crate::app_context::{AppContext, Audio};
 pub use crate::app_info::AppInfo;
-pub use crate::input::KeyCode;
+pub use crate::input::{KeyCode, TouchPoint};
 
 use crate::asset_id::AppAssetId;
 use crate::renderer::Renderer;

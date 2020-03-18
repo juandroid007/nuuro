@@ -16,6 +16,7 @@ use std::marker::PhantomData;
 
 use crate::asset_id::{AppAssetId, IdU16};
 use crate::core::CoreAudio;
+use crate::input::TouchPoint;
 
 /// Context passed to methods in `App`.
 pub struct AppContext<A: AppAssetId> {
@@ -23,6 +24,7 @@ pub struct AppContext<A: AppAssetId> {
     pub audio: Audio<A>,
     dims: (f64, f64),
     cursor: (f64, f64),
+    touches: Vec<TouchPoint>,
     close_requested: bool,
     native_px: f64,
     is_fullscreen: bool,
@@ -40,6 +42,7 @@ impl<A: AppAssetId> AppContext<A> {
             },
             dims,
             cursor: (0., 0.),
+            touches: Vec::new(),
             close_requested: false,
             native_px,
             is_fullscreen: false,
@@ -51,6 +54,24 @@ impl<A: AppAssetId> AppContext<A> {
 
     pub(crate) fn set_cursor(&mut self, cursor: (f64, f64)) {
         self.cursor = cursor;
+        self.bound_cursor();
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn set_touches_pos<F>(&mut self, touches: Vec<TouchPoint>, normalize_fn: F)
+    where
+        F: Fn(f64, f64) -> (f64, f64),
+    {
+        self.touches = touches
+            .iter()
+            .map(|t| {
+                let mut t = *t;
+                let (x, y) = normalize_fn(t.x, t.y);
+                t.x = x;
+                t.y = y;
+                t
+            })
+            .collect();
         self.bound_cursor();
     }
 
@@ -79,6 +100,14 @@ impl<A: AppAssetId> AppContext<A> {
     /// The y coordinate lies in the range `0` to `self.dims().1`.
     pub fn cursor(&self) -> (f64, f64) {
         self.cursor
+    }
+
+    /// Returns the touches points `TouchPoint` positions in app coordinates.
+    ///
+    /// The x coordinate lies in the range `0` to `self.dims().0`.
+    /// The y coordinate lies in the range `0` to `self.dims().1`.
+    pub fn touches(&self) -> &Vec<TouchPoint> {
+        &self.touches
     }
 
     /// Returns the width of a native pixel, measured in "app pixels".

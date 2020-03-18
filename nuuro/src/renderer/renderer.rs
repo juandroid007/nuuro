@@ -78,6 +78,11 @@ impl<A: AppAssetId> Renderer<A> {
         self.b.dims.to_app_pos(raw_x, raw_y)
     }
 
+    #[allow(dead_code)]
+    pub(crate) fn to_app_pos_f64(&self, raw_x: f64, raw_y: f64) -> (f64, f64) {
+        self.b.dims.to_app_pos_f64(raw_x, raw_y)
+    }
+
     pub(crate) fn flush(&mut self) {
         self.b.flush(&mut self.c);
     }

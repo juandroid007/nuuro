@@ -17,16 +17,17 @@ pub mod wasm_imports;
 
 use std::cell::{self, RefCell};
 use std::collections::HashSet;
+use std::ffi::CString;
 use std::io::Cursor;
 use std::mem;
 use std::os::raw::{c_int, c_void};
-use std::ffi::CString;
 
 use self::wasm_imports::*;
 use super::mark_app_created_flag;
 use crate::app_info::AppInfo;
 use crate::asset_id::{AppAssetId, IdU16};
 use crate::input::KeyCode;
+use crate::input::TouchPoint;
 use crate::renderer::atlas::Atlas;
 use crate::renderer::core_renderer::CoreRenderer;
 use crate::renderer::render_buffer::RenderBuffer;
@@ -62,6 +63,7 @@ trait TraitAppRunner {
     fn resize(&mut self, dims: (u32, u32));
     fn update_and_draw(&mut self, time_sec: f64) -> bool;
     fn update_cursor(&mut self, cursor_x: i32, cursor_y: i32);
+    fn update_touches(&mut self, touches: Vec<TouchPoint>);
     fn input(&mut self, key: KeyCode, down: bool) -> bool;
     fn music_count(&self) -> u16;
     fn sound_count(&self) -> u16;
@@ -192,15 +194,30 @@ impl<AS: AppAssetId, AP: App<AS>> TraitAppRunner for AppRunner<AS, AP> {
         );
     }
 
+    fn update_touches(&mut self, touches: Vec<TouchPoint>) {
+        let renderer = &mut self.renderer;
+        self.ctx.set_touches_pos(touches, |x, y| {
+            renderer.as_ref().unwrap().to_app_pos_f64(x, y)
+        });
+    }
+
     fn input(&mut self, key: KeyCode, down: bool) -> bool {
         self.update_is_fullscreen();
-        if down {
-            if self.held_keys.insert(key) {
+        if key == KeyCode::Touch {
+            if down {
                 self.app.key_down(key, &mut self.ctx);
+            } else {
+                self.app.key_up(key, &mut self.ctx);
             }
         } else {
-            if self.held_keys.remove(&key) {
-                self.app.key_up(key, &mut self.ctx);
+            if down {
+                if self.held_keys.insert(key) {
+                    self.app.key_down(key, &mut self.ctx);
+                }
+            } else {
+                if self.held_keys.remove(&key) {
+                    self.app.key_up(key, &mut self.ctx);
+                }
             }
         }
         self.update_cookie();
@@ -253,9 +270,7 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, app: 
 }
 
 pub fn println(string: String) {
-    let c_string = CString::new(string)
-        .unwrap()
-        .into_raw();
+    let c_string = CString::new(string).unwrap().into_raw();
 
     unsafe {
         nuuroWasmConsoleLog(c_string);

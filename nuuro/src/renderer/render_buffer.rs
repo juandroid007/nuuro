@@ -92,6 +92,15 @@ impl RenderDims {
             (raw_y - self.native_pre_pad.1 as i32) as f64 / self.pixel_scalar,
         )
     }
+
+    #[allow(dead_code)]
+    pub fn to_app_pos_f64(&self, raw_x: f64, raw_y: f64) -> (f64, f64) {
+        let raw_y = self.native_dims.1 as f64 - raw_y;
+        (
+            (raw_x - self.native_pre_pad.0 as f64) / self.pixel_scalar,
+            (raw_y - self.native_pre_pad.1 as f64) / self.pixel_scalar,
+        )
+    }
 }
 
 pub struct RenderBuffer {

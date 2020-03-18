@@ -15,6 +15,8 @@
 //! Structs related to user input.
 
 #[cfg(target_arch = "wasm32")]
+use serde::{Deserialize, Serialize};
+#[cfg(target_arch = "wasm32")]
 use std::mem;
 
 /// Enum for keyboard keys and mouse buttons.
@@ -68,12 +70,62 @@ pub enum KeyCode {
     MouseLeft,
     MouseRight,
     MouseMiddle,
+    Touch,
+}
+
+/// Struct that store touch position
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Copy, Clone)]
+pub struct TouchPoint {
+    pub(crate) id: u32,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+}
+
+/// Struct that store touch position
+#[cfg(target_arch = "wasm32")]
+#[derive(Copy, Clone, Deserialize, Serialize)]
+pub struct TouchPoint {
+    pub(crate) id: u32,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+}
+
+impl TouchPoint {
+    /// Return touch identifier
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+    /// Return touch position (x, y)
+    pub fn pos(&self) -> (f64, f64) {
+        (self.x, self.y)
+    }
+}
+
+impl std::fmt::Debug for TouchPoint {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        if fmt.alternate() {
+            write!(
+                fmt,
+                "TouchPoint {{\n\tid: {},\n\tpos: {:?}\n}}",
+                self.id(),
+                self.pos()
+            )
+        } else {
+            write!(
+                fmt,
+                "TouchPoint {{ id: {}, pos: {:?} }}",
+                self.id(),
+                self.pos()
+            )
+        }
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
 impl KeyCode {
     fn count() -> u8 {
-        KeyCode::MouseMiddle as u8 + 1
+        KeyCode::Touch as u8 + 1
     }
     pub(crate) fn from_u8(id: u8) -> Option<KeyCode> {
         if id < Self::count() {
