@@ -24,7 +24,7 @@ use std::io::BufReader;
 use std::path::Path;
 
 use sdl2::image::LoadTexture;
-use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, INIT_OGG};
+// use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, INIT_OGG};
 use sdl2::render::Renderer as SdlRenderer;
 use sdl2::video::gl_attr::GLAttr;
 use sdl2::video::{FullscreenType, GLProfile};
@@ -61,13 +61,22 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
     let sdl_context = sdl2::init().unwrap();
     let video = sdl_context.video().unwrap();
     let _sdl_audio = sdl_context.audio().unwrap();
-    let _mixer_context = mixer_init();
+    // let _mixer_context = mixer_init();
 
-    mixer_setup();
+    // mixer_setup();
     gl_hints(video.gl_attr());
 
     let timer = sdl_context.timer().unwrap();
     let mut event_handler = EventHandler::new(sdl_context.event_pump().unwrap());
+
+    let event_loop = glutin::event_loop::EventLoop::new();
+    let window_builder = glutin::window::WindowBuilder::new()
+        .with_title(info.title)
+        .with_inner_size(glutin::dpi::LogicalSize::new(info.window_pixels.0 as f64, info.window_pixels.1 as f64))
+        .with_resizable(info.resizable);
+    let window_context = glutin::ContextBuilder::new()
+        .build_windowed(window_builder, &event_loop)
+        .unwrap();
 
     let window = if info.resizable {
         video
@@ -182,20 +191,20 @@ fn build_renderer<AS: AppAssetId>(info: &AppInfo, sdl_renderer: &SdlRenderer) ->
     Renderer::<AS>::new(render_buffer, core_renderer)
 }
 
-fn mixer_init() -> Sdl2MixerContext {
-    match sdl2::mixer::init(INIT_OGG) {
-        Ok(ctx) => ctx,
-        // HACK TODO remove special handling once SDL2 mixer 2.0.3 is released
-        //           (see https://bugzilla.libsdl.org/show_bug.cgi?id=3929 for details)
-        Err(ref msg) if msg.as_str() == "OGG support not available" => Sdl2MixerContext,
-        Err(msg) => panic!("sdl2::mixer::init failed: {}", msg),
-    }
-}
+// fn mixer_init() -> Sdl2MixerContext {
+//     match sdl2::mixer::init(INIT_OGG) {
+//         Ok(ctx) => ctx,
+//         // HACK TODO remove special handling once SDL2 mixer 2.0.3 is released
+//         //           (see https://bugzilla.libsdl.org/show_bug.cgi?id=3929 for details)
+//         Err(ref msg) if msg.as_str() == "OGG support not available" => Sdl2MixerContext,
+//         Err(msg) => panic!("sdl2::mixer::init failed: {}", msg),
+//     }
+// }
 
-fn mixer_setup() {
-    sdl2::mixer::open_audio(44100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).unwrap();
-    sdl2::mixer::allocate_channels(4);
-}
+// fn mixer_setup() {
+//     sdl2::mixer::open_audio(44100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).unwrap();
+//     sdl2::mixer::allocate_channels(4);
+// }
 
 fn gl_hints(gl_attr: GLAttr) {
     // TODO test that this gl_attr code actually does anything
