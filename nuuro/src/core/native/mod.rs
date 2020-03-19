@@ -22,6 +22,7 @@ use std::ffi::CStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::time::Instant;
 
 use sdl2::image::LoadTexture;
 // use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, INIT_OGG};
@@ -66,7 +67,8 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
     // mixer_setup();
     gl_hints(video.gl_attr());
 
-    let timer = sdl_context.timer().unwrap();
+    // let timer = sdl_context.timer().unwrap();
+    let timer = Instant::now();
     let mut event_handler = EventHandler::new(sdl_context.event_pump().unwrap());
 
     // let event_loop = glutin::event_loop::EventLoop::new();

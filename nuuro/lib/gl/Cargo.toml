@@ -1,7 +1,7 @@
 [package]
 name = "gl"
 version = "0.1.0"
-authors = ["juandroid007 <juanvillacortac@gmail.com>"]
+authors = ["Juan Villacorta <juanvillacortac@gmail.com>"]
 edition = "2018"
 
 [build-dependencies]

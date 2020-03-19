@@ -188,7 +188,12 @@ impl AssetPacker {
     pub fn gen_javascript(&mut self) {
         assert!(!self.js, "javascript has already been generated");
         self.js = true;
-        create_file(&self.assets_dir, "nuuro.js", html::NUURO_JS, self.check_rerun);
+        create_file(
+            &self.assets_dir,
+            "nuuro.js",
+            html::NUURO_JS,
+            self.check_rerun,
+        );
     }
 
     /// Generates Rust enums to use as handles for all of the packed assets.
