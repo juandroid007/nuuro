@@ -15,7 +15,7 @@
 // use std::path::PathBuf;
 
 //  use sdl2::mixer::{self, Music};
-use rodio::{Device};
+use rodio::Device;
 
 mod sound_data;
 mod sound_source;
@@ -48,7 +48,7 @@ impl CoreAudio {
     }
 
     pub fn play_sound(&mut self, sound: u16) {
-        &self.sounds[sound as usize].play(false);
+        self.sounds[sound as usize].play(false);
     }
 
     pub fn play_music(&mut self, music: u16, repeat: bool) {

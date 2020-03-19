@@ -13,12 +13,13 @@
 // limitations under the License.
 
 use std::fs::File;
-use std::sync::Arc;
 use std::io::{self, BufReader, Read};
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct SoundData(Arc<[u8]>);
 
+#[allow(dead_code)]
 impl SoundData {
     // Load the file at the given path and create a new `SoundData` from it.
     pub fn new(path: &str) -> io::Result<Self> {

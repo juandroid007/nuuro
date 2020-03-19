@@ -1,16 +1,22 @@
 use std::io;
 
+use rodio::buffer::SamplesBuffer;
+use rodio::Decoder;
+use rodio::Source as RSource;
+
 use super::sound_data::SoundData;
 
 pub struct SoundSource {
-    data: io::Cursor<SoundData>,
+    // data: io::Cursor<SoundData>,
     sink: rodio::Sink,
+    channels: u16,
+    samples_rate: u32,
+    samples: Vec<f32>,
 }
 
 impl SoundSource {
     // Create a new `SoundSource` from the given file.
     pub fn new(device: &rodio::Device, path: &str) -> io::Result<Self> {
-        let path = path.as_ref();
         let data = SoundData::new(path)?;
         SoundSource::from_data(device, data)
     }
@@ -21,24 +27,27 @@ impl SoundSource {
             panic!("Could not decode the given audio data");
         }
         let sink = rodio::Sink::new(device);
-        let data = io::Cursor::new(data);
+        let cursor = io::Cursor::new(data);
+        let src = Decoder::new(cursor).unwrap();
         Ok(SoundSource {
-            data,
+            // data,
             sink,
+            channels: src.channels(),
+            samples_rate: src.sample_rate(),
+            samples: src.convert_samples().collect::<Vec<f32>>(),
         })
     }
 
+    fn to_buffer(&self) -> SamplesBuffer<f32> {
+        SamplesBuffer::new(self.channels, self.samples_rate, self.samples.clone())
+    }
+
     pub fn play(&self, repeat: bool) {
-        use rodio::Source;
-        let cursor = self.data.clone();
         if repeat {
-            let sound = rodio::Decoder::new(cursor)
-                .unwrap()
-                .repeat_infinite();
+            let sound = self.to_buffer().repeat_infinite();
             self.sink.append(sound);
         } else {
-            let sound = rodio::Decoder::new(cursor)
-                .unwrap();
+            let sound = self.to_buffer();
             self.sink.append(sound);
         }
     }

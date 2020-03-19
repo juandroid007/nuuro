@@ -14,7 +14,7 @@ license = "Apache-2.0"
 byteorder = "1.3.2"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-gl = "0.6.1"
+gl = { path = "lib/gl" }
 glutin = "0.24"
 rodio = "0.11.0"
 sdl2 = { version = "0.29", default-features = false, features = ["image"] }

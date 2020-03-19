@@ -69,14 +69,14 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
     let timer = sdl_context.timer().unwrap();
     let mut event_handler = EventHandler::new(sdl_context.event_pump().unwrap());
 
-    let event_loop = glutin::event_loop::EventLoop::new();
-    let window_builder = glutin::window::WindowBuilder::new()
-        .with_title(info.title)
-        .with_inner_size(glutin::dpi::LogicalSize::new(info.window_pixels.0 as f64, info.window_pixels.1 as f64))
-        .with_resizable(info.resizable);
-    let window_context = glutin::ContextBuilder::new()
-        .build_windowed(window_builder, &event_loop)
-        .unwrap();
+    // let event_loop = glutin::event_loop::EventLoop::new();
+    // let window_builder = glutin::window::WindowBuilder::new()
+    //     .with_title(info.title)
+    //     .with_inner_size(glutin::dpi::LogicalSize::new(info.window_pixels.0 as f64, info.window_pixels.1 as f64))
+    //     .with_resizable(info.resizable);
+    // let window_context = glutin::ContextBuilder::new()
+    //     .build_windowed(window_builder, &event_loop)
+    //     .unwrap();
 
     let window = if info.resizable {
         video

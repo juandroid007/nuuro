@@ -21,6 +21,7 @@ use sdl2::render::Texture;
 
 use gl;
 use gl::types::*;
+//use crate::gl::types::*;
 
 use self::sprite_program::SpriteProgram;
 use crate::renderer::render_buffer::RenderBuffer;
