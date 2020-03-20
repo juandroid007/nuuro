@@ -14,14 +14,15 @@
 
 mod shader_util;
 mod sprite_program;
+mod texture;
 
 use std::mem;
 
-use sdl2::render::Texture;
+// use sdl2::render::Texture;
+pub use self::texture::Texture;
 
 use gl;
 use gl::types::*;
-//use crate::gl::types::*;
 
 use self::sprite_program::SpriteProgram;
 use crate::renderer::render_buffer::RenderBuffer;

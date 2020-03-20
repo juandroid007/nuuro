@@ -14,7 +14,8 @@
 
 use std::collections::HashSet;
 
-use sdl2::{event::Event, keyboard::Keycode as SdlKeyCode, mouse::MouseButton, EventPump};
+use glutin::dpi::LogicalPosition;
+use glutin::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
 use crate::asset_id::AppAssetId;
 use crate::input::KeyCode;
@@ -22,124 +23,134 @@ use crate::renderer::Renderer;
 use crate::{App, AppContext};
 
 pub struct EventHandler {
-    pump: EventPump,
     held_keys: HashSet<KeyCode>,
 }
 
 impl EventHandler {
-    pub fn new(pump: EventPump) -> EventHandler {
+    pub fn new() -> EventHandler {
         EventHandler {
-            pump,
             held_keys: HashSet::new(),
         }
     }
 
     pub fn process_events<AS: AppAssetId, AP: App<AS>>(
         &mut self,
+        event: Event,
         app: &mut AP,
         ctx: &mut AppContext<AS>,
         renderer: &Renderer<AS>,
     ) -> bool {
-        for event in self.pump.poll_iter() {
-            match event {
-                Event::Quit { .. } => ctx.close(),
-                Event::KeyDown {
-                    keycode: Some(keycode),
+        match event {
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::KeyboardInput {
+                    input:
+                        KeyboardInput {
+                            state,
+                            virtual_keycode,
+                            ..
+                        },
                     ..
-                } => {
-                    if let Some(keycode) = sdl_to_nuuro_key(keycode) {
-                        if self.held_keys.insert(keycode) {
-                            app.key_down(keycode, ctx);
+                } => match state {
+                    ElementState::Pressed => {
+                        if let Some(keycode) = virtual_keycode {
+                            if let Some(keycode) = glutin_to_nuuro_key(keycode) {
+                                if self.held_keys.insert(keycode) {
+                                    app.key_down(keycode, ctx);
+                                }
+                            }
                         }
                     }
-                }
-                Event::KeyUp {
-                    keycode: Some(keycode),
+                    ElementState::Released => {
+                        if let Some(keycode) = virtual_keycode {
+                            if let Some(keycode) = glutin_to_nuuro_key(keycode) {
+                                if self.held_keys.remove(&keycode) {
+                                    app.key_up(keycode, ctx);
+                                }
+                            }
+                        }
+                    }
+                },
+                WindowEvent::CursorMoved {
+                    position: LogicalPosition { x, y },
                     ..
-                } => {
-                    if let Some(keycode) = sdl_to_nuuro_key(keycode) {
-                        if self.held_keys.remove(&keycode) {
-                            app.key_up(keycode, ctx);
+                } => ctx.set_cursor(renderer.to_app_pos(x as i32, y as i32)),
+                WindowEvent::MouseInput { state, button, .. } => match state {
+                    ElementState::Pressed => {
+                        if let Some(button) = mouse_button_to_nuuro_key(button) {
+                            if self.held_keys.insert(button) {
+                                app.key_down(button, ctx);
+                            }
                         }
                     }
-                }
-                Event::MouseMotion { x, y, .. } => ctx.set_cursor(renderer.to_app_pos(x, y)),
-                Event::MouseButtonDown {
-                    x, y, mouse_btn, ..
-                } => {
-                    ctx.set_cursor(renderer.to_app_pos(x, y));
-                    if let Some(keycode) = mouse_button_to_nuuro_key(mouse_btn) {
-                        if self.held_keys.insert(keycode) {
-                            app.key_down(keycode, ctx);
+                    ElementState::Released => {
+                        if let Some(button) = mouse_button_to_nuuro_key(button) {
+                            if self.held_keys.remove(&button) {
+                                app.key_up(button, ctx);
+                            }
                         }
                     }
+                },
+                WindowEvent::CloseRequested => {
+                    ctx.close();
                 }
-                Event::MouseButtonUp {
-                    x, y, mouse_btn, ..
-                } => {
-                    ctx.set_cursor(renderer.to_app_pos(x, y));
-                    if let Some(keycode) = mouse_button_to_nuuro_key(mouse_btn) {
-                        if self.held_keys.remove(&keycode) {
-                            app.key_up(keycode, ctx);
-                        }
-                    }
-                }
-                _ => {}
-            }
-            if ctx.take_close_request() {
-                return false;
-            }
+                _ => (),
+            },
+            _ => (),
+        }
+
+        if ctx.take_close_request() {
+            return false;
         }
         true
     }
 }
 
-fn sdl_to_nuuro_key(sdl: SdlKeyCode) -> Option<KeyCode> {
-    match sdl {
-        SdlKeyCode::A => Some(KeyCode::A),
-        SdlKeyCode::B => Some(KeyCode::B),
-        SdlKeyCode::C => Some(KeyCode::C),
-        SdlKeyCode::D => Some(KeyCode::D),
-        SdlKeyCode::E => Some(KeyCode::E),
-        SdlKeyCode::F => Some(KeyCode::F),
-        SdlKeyCode::G => Some(KeyCode::G),
-        SdlKeyCode::H => Some(KeyCode::H),
-        SdlKeyCode::I => Some(KeyCode::I),
-        SdlKeyCode::J => Some(KeyCode::J),
-        SdlKeyCode::K => Some(KeyCode::K),
-        SdlKeyCode::L => Some(KeyCode::L),
-        SdlKeyCode::M => Some(KeyCode::M),
-        SdlKeyCode::N => Some(KeyCode::N),
-        SdlKeyCode::O => Some(KeyCode::O),
-        SdlKeyCode::P => Some(KeyCode::P),
-        SdlKeyCode::Q => Some(KeyCode::Q),
-        SdlKeyCode::R => Some(KeyCode::R),
-        SdlKeyCode::S => Some(KeyCode::S),
-        SdlKeyCode::T => Some(KeyCode::T),
-        SdlKeyCode::U => Some(KeyCode::U),
-        SdlKeyCode::V => Some(KeyCode::V),
-        SdlKeyCode::W => Some(KeyCode::W),
-        SdlKeyCode::X => Some(KeyCode::X),
-        SdlKeyCode::Y => Some(KeyCode::Y),
-        SdlKeyCode::Z => Some(KeyCode::Z),
-        SdlKeyCode::Num0 => Some(KeyCode::Num0),
-        SdlKeyCode::Num1 => Some(KeyCode::Num1),
-        SdlKeyCode::Num2 => Some(KeyCode::Num2),
-        SdlKeyCode::Num3 => Some(KeyCode::Num3),
-        SdlKeyCode::Num4 => Some(KeyCode::Num4),
-        SdlKeyCode::Num5 => Some(KeyCode::Num5),
-        SdlKeyCode::Num6 => Some(KeyCode::Num6),
-        SdlKeyCode::Num7 => Some(KeyCode::Num7),
-        SdlKeyCode::Num8 => Some(KeyCode::Num8),
-        SdlKeyCode::Num9 => Some(KeyCode::Num9),
-        SdlKeyCode::Right => Some(KeyCode::Right),
-        SdlKeyCode::Left => Some(KeyCode::Left),
-        SdlKeyCode::Down => Some(KeyCode::Down),
-        SdlKeyCode::Up => Some(KeyCode::Up),
-        SdlKeyCode::Return => Some(KeyCode::Return),
-        SdlKeyCode::Space => Some(KeyCode::Space),
-        SdlKeyCode::Backspace => Some(KeyCode::Backspace),
-        SdlKeyCode::Delete => Some(KeyCode::Delete),
+fn glutin_to_nuuro_key(key: VirtualKeyCode) -> Option<KeyCode> {
+    match key {
+        VirtualKeyCode::A => Some(KeyCode::A),
+        VirtualKeyCode::B => Some(KeyCode::B),
+        VirtualKeyCode::C => Some(KeyCode::C),
+        VirtualKeyCode::D => Some(KeyCode::D),
+        VirtualKeyCode::E => Some(KeyCode::E),
+        VirtualKeyCode::F => Some(KeyCode::F),
+        VirtualKeyCode::G => Some(KeyCode::G),
+        VirtualKeyCode::H => Some(KeyCode::H),
+        VirtualKeyCode::I => Some(KeyCode::I),
+        VirtualKeyCode::J => Some(KeyCode::J),
+        VirtualKeyCode::K => Some(KeyCode::K),
+        VirtualKeyCode::L => Some(KeyCode::L),
+        VirtualKeyCode::M => Some(KeyCode::M),
+        VirtualKeyCode::N => Some(KeyCode::N),
+        VirtualKeyCode::O => Some(KeyCode::O),
+        VirtualKeyCode::P => Some(KeyCode::P),
+        VirtualKeyCode::Q => Some(KeyCode::Q),
+        VirtualKeyCode::R => Some(KeyCode::R),
+        VirtualKeyCode::S => Some(KeyCode::S),
+        VirtualKeyCode::T => Some(KeyCode::T),
+        VirtualKeyCode::U => Some(KeyCode::U),
+        VirtualKeyCode::V => Some(KeyCode::V),
+        VirtualKeyCode::W => Some(KeyCode::W),
+        VirtualKeyCode::X => Some(KeyCode::X),
+        VirtualKeyCode::Y => Some(KeyCode::Y),
+        VirtualKeyCode::Z => Some(KeyCode::Z),
+        VirtualKeyCode::Key0 => Some(KeyCode::Num0),
+        VirtualKeyCode::Key1 => Some(KeyCode::Num1),
+        VirtualKeyCode::Key2 => Some(KeyCode::Num2),
+        VirtualKeyCode::Key3 => Some(KeyCode::Num3),
+        VirtualKeyCode::Key4 => Some(KeyCode::Num4),
+        VirtualKeyCode::Key5 => Some(KeyCode::Num5),
+        VirtualKeyCode::Key6 => Some(KeyCode::Num6),
+        VirtualKeyCode::Key7 => Some(KeyCode::Num7),
+        VirtualKeyCode::Key8 => Some(KeyCode::Num8),
+        VirtualKeyCode::Key9 => Some(KeyCode::Num9),
+        VirtualKeyCode::Right => Some(KeyCode::Right),
+        VirtualKeyCode::Left => Some(KeyCode::Left),
+        VirtualKeyCode::Down => Some(KeyCode::Down),
+        VirtualKeyCode::Up => Some(KeyCode::Up),
+        VirtualKeyCode::Return => Some(KeyCode::Return),
+        VirtualKeyCode::Space => Some(KeyCode::Space),
+        VirtualKeyCode::Back => Some(KeyCode::Backspace),
+        VirtualKeyCode::Delete => Some(KeyCode::Delete),
         _ => None,
     }
 }

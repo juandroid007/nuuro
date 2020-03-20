@@ -29,9 +29,11 @@ extern crate byteorder;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate glutin;
 #[cfg(not(target_arch = "wasm32"))]
-extern crate rodio;
+extern crate image;
 #[cfg(not(target_arch = "wasm32"))]
-extern crate sdl2;
+extern crate rodio;
+// #[cfg(not(target_arch = "wasm32"))]
+// extern crate sdl2;
 #[cfg(target_arch = "wasm32")]
 extern crate serde;
 #[cfg(target_arch = "wasm32")]
@@ -43,6 +45,7 @@ pub mod asset_id;
 mod core;
 mod input;
 pub mod renderer;
+pub(crate) mod utils;
 
 #[cfg(target_arch = "wasm32")]
 pub use crate::core::{wasm_exports, wasm_imports};

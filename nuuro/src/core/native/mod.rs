@@ -21,17 +21,13 @@ pub use self::core_audio::CoreAudio;
 use std::ffi::CStr;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
 use std::time::Instant;
 
-use sdl2::image::LoadTexture;
-// use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, INIT_OGG};
-use sdl2::render::Renderer as SdlRenderer;
-use sdl2::video::gl_attr::GLAttr;
-use sdl2::video::{FullscreenType, GLProfile};
-use sdl2::{self, VideoSubsystem};
+use glutin::dpi::LogicalSize;
+use glutin::EventsLoop;
+use glutin::WindowBuilder;
+use glutin::{ContextBuilder, ContextTrait, WindowedContext};
 
-use gl;
 use gl::types::*;
 
 use self::app_clock::AppClock;
@@ -41,6 +37,7 @@ use crate::app_info::AppInfo;
 use crate::asset_id::{AppAssetId, IdU16};
 use crate::renderer::atlas::Atlas;
 use crate::renderer::core_renderer::CoreRenderer;
+use crate::renderer::core_renderer::Texture;
 use crate::renderer::render_buffer::RenderBuffer;
 use crate::renderer::Renderer;
 use crate::{App, AppContext};
@@ -54,54 +51,64 @@ macro_rules! nuuro_header {
     () => {};
 }
 
-pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
+pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut app: AP) {
     mark_app_created_flag();
 
-    #[cfg(target_os = "windows")]
-    sdl2::hint::set("SDL_RENDER_DRIVER", "opengles2");
-    let sdl_context = sdl2::init().unwrap();
-    let video = sdl_context.video().unwrap();
-    let _sdl_audio = sdl_context.audio().unwrap();
+    // #[cfg(target_os = "windows")]
+    // sdl2::hint::set("SDL_RENDER_DRIVER", "opengles2");
+    // let sdl_context = sdl2::init().unwrap();
+    // let video = sdl_context.video().unwrap();
+    // let _sdl_audio = sdl_context.audio().unwrap();
     // let _mixer_context = mixer_init();
 
     // mixer_setup();
-    gl_hints(video.gl_attr());
+    // gl_hints(video.gl_attr());
 
     // let timer = sdl_context.timer().unwrap();
+
+    let mut events_loop = EventsLoop::new();
+
+    let mut event_handler = EventHandler::new();
+    let window = WindowBuilder::new()
+        .with_title(info.title)
+        .with_dimensions(LogicalSize::new(
+            info.window_pixels.0 as f64,
+            info.window_pixels.1 as f64,
+        ))
+        .with_resizable(info.resizable);
+    let gl_context = ContextBuilder::new()
+        .with_gl_debug_flag(true)
+        .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 0)))
+        .with_gl_profile(glutin::GlProfile::Core)
+        .build_windowed(window, &events_loop)
+        .unwrap();
+    unsafe { gl_context.make_current().unwrap() };
+
     let timer = Instant::now();
-    let mut event_handler = EventHandler::new(sdl_context.event_pump().unwrap());
 
-    // let event_loop = glutin::event_loop::EventLoop::new();
-    // let window_builder = glutin::window::WindowBuilder::new()
-    //     .with_title(info.title)
-    //     .with_inner_size(glutin::dpi::LogicalSize::new(info.window_pixels.0 as f64, info.window_pixels.1 as f64))
-    //     .with_resizable(info.resizable);
-    // let window_context = glutin::ContextBuilder::new()
-    //     .build_windowed(window_builder, &event_loop)
-    //     .unwrap();
+    // let window = if info.resizable {
+    //     video
+    //         .window(info.title, info.window_pixels.0, info.window_pixels.1)
+    //         .position_centered()
+    //         .opengl()
+    //         .resizable()
+    //         .build()
+    //         .unwrap()
+    // } else {
+    //     video
+    //         .window(info.title, info.window_pixels.0, info.window_pixels.1)
+    //         .position_centered()
+    //         .opengl()
+    //         .build()
+    //         .unwrap()
+    // };
 
-    let window = if info.resizable {
-        video
-            .window(info.title, info.window_pixels.0, info.window_pixels.1)
-            .position_centered()
-            .opengl()
-            .resizable()
-            .build()
-            .unwrap()
-    } else {
-        video
-            .window(info.title, info.window_pixels.0, info.window_pixels.1)
-            .position_centered()
-            .opengl()
-            .build()
-            .unwrap()
-    };
+    // let mut sdl_renderer = window.renderer().accelerated().build().unwrap();
 
-    let mut sdl_renderer = window.renderer().accelerated().build().unwrap();
+    // init_gl(&video);
+    init_gl(&gl_context);
 
-    init_gl(&video);
-
-    let mut renderer = build_renderer(&info, &sdl_renderer);
+    let mut renderer = build_renderer(&info);
 
     gl_error_check();
 
@@ -119,45 +126,55 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
 
     let mut clock = AppClock::new(timer, &info);
 
+    // let fullscreen_cfg = Some(Fullscreen::Borderless(events_loop.primary_monitor()));
+
+    let mut continuing = true;
+
     loop {
+        events_loop.poll_events(|event| {
+            continuing =
+                event_handler.process_events(event, &mut app, &mut ctx, &renderer);
+        });
+
         unsafe {
             gl::ClearColor(0., 0., 0., 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
 
-        let screen_dims = sdl_renderer.window().unwrap().size();
+        let screen_dims = (
+            gl_context.window().get_inner_size().unwrap().width as u32,
+            gl_context.window().get_inner_size().unwrap().height as u32,
+        );
+        // let screen_dims = sdl_renderer.window().unwrap().size();
         if screen_dims.0 > 0 && screen_dims.1 > 0 {
             renderer.set_screen_dims(screen_dims);
             ctx.set_dims(renderer.app_dims(), renderer.native_px());
             app.render(&mut renderer, &ctx);
             renderer.flush();
         }
-        sdl_renderer.present();
+
         gl_error_check();
+        gl_context.swap_buffers().unwrap();
 
         let elapsed = clock.step();
 
-        match (ctx.is_fullscreen(), ctx.desires_fullscreen()) {
+        match (
+            ctx.is_fullscreen(),
+            ctx.desires_fullscreen(),
+        ) {
             (false, true) => {
-                let success = sdl_renderer
-                    .window_mut()
-                    .unwrap()
-                    .set_fullscreen(FullscreenType::Desktop)
-                    .is_ok();
-                ctx.set_is_fullscreen(success);
+                gl_context
+                    .window()
+                    .set_fullscreen(Some(events_loop.get_primary_monitor()));
+                ctx.set_is_fullscreen(true);
             }
             (true, false) => {
-                let success = sdl_renderer
-                    .window_mut()
-                    .unwrap()
-                    .set_fullscreen(FullscreenType::Off)
-                    .is_ok();
-                ctx.set_is_fullscreen(!success);
+                gl_context.window().set_fullscreen(None);
+                ctx.set_is_fullscreen(false);
             }
             (false, false) | (true, true) => {}
         }
 
-        let continuing = event_handler.process_events(&mut app, &mut ctx, &renderer);
         if !continuing {
             break;
         }
@@ -173,20 +190,13 @@ pub fn println(string: String) {
     println!("{}", string);
 }
 
-fn build_renderer<AS: AppAssetId>(info: &AppInfo, sdl_renderer: &SdlRenderer) -> Renderer<AS> {
+fn build_renderer<AS: AppAssetId>(info: &AppInfo) -> Renderer<AS> {
     let sprites_atlas =
         Atlas::new(BufReader::new(File::open("assets/sprites.atlas").unwrap())).unwrap();
     let render_buffer = RenderBuffer::new(&info, info.window_pixels, sprites_atlas);
 
-    let mut sprites_tex = sdl_renderer
-        .load_texture(Path::new("assets/sprites.png"))
-        .unwrap();
-    unsafe {
-        sprites_tex.gl_bind_texture();
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
-        sprites_tex.gl_unbind_texture();
-    }
+    let sprites_tex = Texture::new("assets/sprites.png");
+
     // TODO need to ensure Nearest-neighbor sampling is used?
     let core_renderer = CoreRenderer::new(sprites_tex);
 
@@ -208,15 +218,16 @@ fn build_renderer<AS: AppAssetId>(info: &AppInfo, sdl_renderer: &SdlRenderer) ->
 //     sdl2::mixer::allocate_channels(4);
 // }
 
-fn gl_hints(gl_attr: GLAttr) {
-    // TODO test that this gl_attr code actually does anything
-    gl_attr.set_context_profile(GLProfile::Core);
-    gl_attr.set_context_flags().debug().set();
-    gl_attr.set_context_version(3, 0);
-}
+// fn gl_hints(gl_attr: GLAttr) {
+//     // TODO test that this gl_attr code actually does anything
+//     gl_attr.set_context_profile(GLProfile::Core);
+//     gl_attr.set_context_flags().debug().set();
+//     gl_attr.set_context_version(3, 0);
+// }
 
-fn init_gl(video: &VideoSubsystem) {
-    gl::load_with(|name| video.gl_get_proc_address(name) as *const _);
+// fn init_gl(video: &VideoSubsystem) {
+fn init_gl(gl_context: &WindowedContext) {
+    gl::load_with(|name| gl_context.get_proc_address(name) as *const _);
 
     unsafe {
         gl::Enable(gl::BLEND);
