@@ -24,13 +24,12 @@ use std::io::BufReader;
 use std::path::Path;
 
 use sdl2::image::LoadTexture;
-use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, INIT_OGG};
-use sdl2::render::Renderer as SdlRenderer;
+use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, self};
+use sdl2::render::TextureCreator;
 use sdl2::video::gl_attr::GLAttr;
 use sdl2::video::{FullscreenType, GLProfile};
 use sdl2::{self, VideoSubsystem};
 
-use gl;
 use gl::types::*;
 
 use self::app_clock::AppClock;
@@ -86,11 +85,20 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
             .unwrap()
     };
 
-    let mut sdl_renderer = window.renderer().accelerated().build().unwrap();
+    let gl_ctx = window.gl_create_context().unwrap();
+    window.gl_make_current(&gl_ctx).unwrap();
+
+    let mut sdl_renderer = window
+        .into_canvas()
+        .index(find_sdl_gl_driver().unwrap())
+        .accelerated()
+        .build()
+        .unwrap();
+    // let mut sdl_renderer = window.renderer().accelerated().build().unwrap();
 
     init_gl(&video);
 
-    let mut renderer = build_renderer(&info, &sdl_renderer);
+    let mut renderer = build_renderer(&info, &sdl_renderer.texture_creator());
 
     gl_error_check();
 
@@ -114,7 +122,7 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
 
-        let screen_dims = sdl_renderer.window().unwrap().size();
+        let screen_dims = sdl_renderer.window().size();
         if screen_dims.0 > 0 && screen_dims.1 > 0 {
             renderer.set_screen_dims(screen_dims);
             ctx.set_dims(renderer.app_dims(), renderer.native_px());
@@ -130,7 +138,6 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
             (false, true) => {
                 let success = sdl_renderer
                     .window_mut()
-                    .unwrap()
                     .set_fullscreen(FullscreenType::Desktop)
                     .is_ok();
                 ctx.set_is_fullscreen(success);
@@ -138,7 +145,6 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
             (true, false) => {
                 let success = sdl_renderer
                     .window_mut()
-                    .unwrap()
                     .set_fullscreen(FullscreenType::Off)
                     .is_ok();
                 ctx.set_is_fullscreen(!success);
@@ -162,12 +168,12 @@ pub fn println(string: String) {
     println!("{}", string);
 }
 
-fn build_renderer<AS: AppAssetId>(info: &AppInfo, sdl_renderer: &SdlRenderer) -> Renderer<AS> {
+fn build_renderer<T, AS: AppAssetId>(info: &AppInfo, texture_creator: &TextureCreator<T>) -> Renderer<AS> {
     let sprites_atlas =
         Atlas::new(BufReader::new(File::open("assets/sprites.atlas").unwrap())).unwrap();
     let render_buffer = RenderBuffer::new(&info, info.window_pixels, sprites_atlas);
 
-    let mut sprites_tex = sdl_renderer
+    let mut sprites_tex = texture_creator
         .load_texture(Path::new("assets/sprites.png"))
         .unwrap();
     unsafe {
@@ -183,7 +189,7 @@ fn build_renderer<AS: AppAssetId>(info: &AppInfo, sdl_renderer: &SdlRenderer) ->
 }
 
 fn mixer_init() -> Sdl2MixerContext {
-    match sdl2::mixer::init(INIT_OGG) {
+    match sdl2::mixer::init(mixer::InitFlag::OGG) {
         Ok(ctx) => ctx,
         // HACK TODO remove special handling once SDL2 mixer 2.0.3 is released
         //           (see https://bugzilla.libsdl.org/show_bug.cgi?id=3929 for details)
@@ -205,12 +211,27 @@ fn gl_hints(gl_attr: GLAttr) {
 }
 
 fn init_gl(video: &VideoSubsystem) {
-    gl::load_with(|name| video.gl_get_proc_address(name) as *const _);
+    // gl::load_with(|name| video.gl_get_proc_address(name) as *const _);
+
+    gl::load_with(|name| {
+        let pointer = video.gl_get_proc_address(name);
+        println!("{}", name);
+        pointer as *const _
+    });
 
     unsafe {
         gl::Enable(gl::BLEND);
         gl::BlendFunc(gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
     }
+}
+
+fn find_sdl_gl_driver() -> Option<u32> {
+    for (index, item) in sdl2::render::drivers().enumerate() {
+        if item.name == "opengl" {
+            return Some(index as u32);
+        }
+    }
+    None
 }
 
 fn print_gl_info() {
