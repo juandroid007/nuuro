@@ -82,11 +82,7 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
 
     gl_error_check();
 
-    let mut ctx = AppContext::new(
-        core_audio,
-        renderer.app_dims(),
-        renderer.native_px(),
-    );
+    let mut ctx = AppContext::new(core_audio, renderer.app_dims(), renderer.native_px());
 
     if info.print_gl_info {
         print_gl_info();
@@ -100,8 +96,7 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
 
     loop {
         events_loop.poll_events(|event| {
-            continuing =
-                event_handler.process_events(event, &mut app, &mut ctx, &renderer);
+            continuing = event_handler.process_events(event, &mut app, &mut ctx, &renderer);
         });
 
         unsafe {
@@ -126,10 +121,7 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
 
         let elapsed = clock.step();
 
-        match (
-            ctx.is_fullscreen(),
-            ctx.desires_fullscreen(),
-        ) {
+        match (ctx.is_fullscreen(), ctx.desires_fullscreen()) {
             (false, true) => {
                 gl_context
                     .window()

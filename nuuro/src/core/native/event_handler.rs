@@ -40,8 +40,8 @@ impl EventHandler {
         ctx: &mut AppContext<AS>,
         renderer: &Renderer<AS>,
     ) -> bool {
-        match event {
-            Event::WindowEvent { event, .. } => match event {
+        if let Event::WindowEvent { event, .. } = event {
+            match event {
                 WindowEvent::KeyboardInput {
                     input:
                         KeyboardInput {
@@ -49,7 +49,7 @@ impl EventHandler {
                             virtual_keycode,
                             ..
                         },
-                    ..
+                        ..
                 } => match state {
                     ElementState::Pressed => {
                         if let Some(keycode) = virtual_keycode {
@@ -94,8 +94,7 @@ impl EventHandler {
                     ctx.close();
                 }
                 _ => (),
-            },
-            _ => (),
+            }
         }
 
         if ctx.take_close_request() {

@@ -2,7 +2,7 @@ use std::os::raw::c_void;
 use std::path::Path;
 
 use gl::types::*;
-use image::{GenericImageView, DynamicImage};
+use image::{DynamicImage, GenericImageView};
 
 pub struct Texture(GLuint);
 
@@ -10,15 +10,8 @@ impl Texture {
     pub fn new(path: &str) -> Self {
         let mut texture: GLuint = 0;
 
-        // load image, create texture and generate mipmaps
-        // let img = image::open().expect("Failed to load texture");
-        // let img = match img {
-        //     DynamicImage::ImageRgba8(img) => img,
-        //     img => img.to_rgba()
-        // };
-
         let (img, width, height) = match image::open(&Path::new(path)) {
-            Err(_) => panic!("Failed to load texure"),
+            Err(err) => panic!("Failed to load texure: {:?}", err),
             Ok(img) => {
                 println!("Dimensions of image are {:?}", img.dimensions());
 
@@ -26,7 +19,7 @@ impl Texture {
 
                 let img = match img {
                     DynamicImage::ImageRgba8(img) => img,
-                    img => img.to_rgba()
+                    img => img.to_rgba(),
                 };
 
                 (img, width, height)
