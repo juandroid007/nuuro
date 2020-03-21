@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// use sdl2::TimerSubsystem;
-
 use crate::app_info::AppInfo;
 
 use std::time::Instant;
@@ -23,7 +21,6 @@ mod units;
 use self::units::Milliseconds;
 
 pub struct AppClock {
-    // timer: TimerSubsystem,
     timer: Instant,
     last_ticks: Milliseconds,
     frame_dur_millis: Milliseconds,
@@ -69,13 +66,11 @@ impl AppClock {
             if dt < self.frame_dur_millis {
                 let sleep_time = self.frame_dur_millis - dt;
                 std::thread::sleep(sleep_time.to_duration());
-            // self.timer.delay(self.frame_dur_millis - dt);
             } else {
                 break;
             }
         }
         self.last_ticks = Milliseconds::from_duration(self.timer.elapsed());
-        // self.last_ticks = self.timer.ticks();
         elapsed
     }
 

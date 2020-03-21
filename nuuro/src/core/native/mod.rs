@@ -70,7 +70,6 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
         .with_gl_debug_flag(true)
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 0)))
         .with_gl_profile(glutin::GlProfile::Core)
-        .with_vsync(true)
         .build_windowed(window, &events_loop)
         .unwrap();
     unsafe { gl_context.make_current().unwrap() };
