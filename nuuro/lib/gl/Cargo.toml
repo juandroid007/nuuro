@@ -1,9 +1,0 @@
-[package]
-name = "gl"
-version = "0.1.0"
-authors = ["Juan Villacorta <juanvillacortac@gmail.com>"]
-edition = "2018"
-publish = false
-
-[build-dependencies]
-gl_generator = "0.14.0"
