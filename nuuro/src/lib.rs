@@ -29,6 +29,8 @@ extern crate byteorder;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate gl;
 #[cfg(not(target_arch = "wasm32"))]
+extern crate rodio;
+#[cfg(not(target_arch = "wasm32"))]
 extern crate sdl2;
 #[cfg(target_arch = "wasm32")]
 extern crate serde;

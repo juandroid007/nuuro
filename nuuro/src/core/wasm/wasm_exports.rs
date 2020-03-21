@@ -178,8 +178,8 @@ pub unsafe fn nuuroWasmStringLen(s: JsInteropString) -> usize {
 macro_rules! nuuro_header {
     () => {
         pub mod nuuro_wasm_exports {
-            use std::os::raw::{c_char, c_int, c_void};
             use ::nuuro::wasm_exports::JsInteropString;
+            use std::os::raw::{c_char, c_int, c_void};
 
             #[no_mangle]
             pub unsafe extern "C" fn nuuroWasmInit() {

@@ -24,7 +24,7 @@ use std::io::BufReader;
 use std::path::Path;
 
 use sdl2::image::LoadTexture;
-use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, self};
+// use sdl2::mixer::{Sdl2MixerContext, AUDIO_S16LSB, DEFAULT_CHANNELS, self};
 use sdl2::render::TextureCreator;
 use sdl2::video::gl_attr::GLAttr;
 use sdl2::video::{FullscreenType, GLProfile};
@@ -55,14 +55,14 @@ macro_rules! nuuro_header {
 pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
     mark_app_created_flag();
 
+    // Audio needs to be initialized before SDL2
+    let core_audio = CoreAudio::new(AS::Sound::count());
+
     #[cfg(target_os = "windows")]
     sdl2::hint::set("SDL_RENDER_DRIVER", "opengles2");
     let sdl_context = sdl2::init().unwrap();
     let video = sdl_context.video().unwrap();
-    let _sdl_audio = sdl_context.audio().unwrap();
-    let _mixer_context = mixer_init();
 
-    mixer_setup();
     gl_hints(video.gl_attr());
 
     let timer = sdl_context.timer().unwrap();
@@ -72,20 +72,18 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
         video
             .window(info.title, info.window_pixels.0, info.window_pixels.1)
             .position_centered()
-            .opengl()
             .resizable()
+            .opengl()
             .build()
-            .unwrap()
     } else {
         video
             .window(info.title, info.window_pixels.0, info.window_pixels.1)
             .position_centered()
             .opengl()
             .build()
-            .unwrap()
-    };
+    }.expect("Failed to create the window context");
 
-    let gl_ctx = window.gl_create_context().unwrap();
+    let gl_ctx = window.gl_create_context().expect("Error creating OpenGL context");
     window.gl_make_current(&gl_ctx).unwrap();
 
     let mut sdl_renderer = window
@@ -94,7 +92,6 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
         .accelerated()
         .build()
         .unwrap();
-    // let mut sdl_renderer = window.renderer().accelerated().build().unwrap();
 
     init_gl(&video);
 
@@ -103,7 +100,7 @@ pub fn run<AS: AppAssetId, AP: App<AS>>(info: AppInfo, mut app: AP) {
     gl_error_check();
 
     let mut ctx = AppContext::new(
-        CoreAudio::new(AS::Sound::count()),
+        core_audio,
         renderer.app_dims(),
         renderer.native_px(),
     );
@@ -168,7 +165,10 @@ pub fn println(string: String) {
     println!("{}", string);
 }
 
-fn build_renderer<T, AS: AppAssetId>(info: &AppInfo, texture_creator: &TextureCreator<T>) -> Renderer<AS> {
+fn build_renderer<T, AS: AppAssetId>(
+    info: &AppInfo,
+    texture_creator: &TextureCreator<T>,
+) -> Renderer<AS> {
     let sprites_atlas =
         Atlas::new(BufReader::new(File::open("assets/sprites.atlas").unwrap())).unwrap();
     let render_buffer = RenderBuffer::new(&info, info.window_pixels, sprites_atlas);
@@ -188,21 +188,6 @@ fn build_renderer<T, AS: AppAssetId>(info: &AppInfo, texture_creator: &TextureCr
     Renderer::<AS>::new(render_buffer, core_renderer)
 }
 
-fn mixer_init() -> Sdl2MixerContext {
-    match sdl2::mixer::init(mixer::InitFlag::OGG) {
-        Ok(ctx) => ctx,
-        // HACK TODO remove special handling once SDL2 mixer 2.0.3 is released
-        //           (see https://bugzilla.libsdl.org/show_bug.cgi?id=3929 for details)
-        Err(ref msg) if msg.as_str() == "OGG support not available" => Sdl2MixerContext,
-        Err(msg) => panic!("sdl2::mixer::init failed: {}", msg),
-    }
-}
-
-fn mixer_setup() {
-    sdl2::mixer::open_audio(44100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).unwrap();
-    sdl2::mixer::allocate_channels(4);
-}
-
 fn gl_hints(gl_attr: GLAttr) {
     // TODO test that this gl_attr code actually does anything
     gl_attr.set_context_profile(GLProfile::Core);
@@ -211,11 +196,9 @@ fn gl_hints(gl_attr: GLAttr) {
 }
 
 fn init_gl(video: &VideoSubsystem) {
-    // gl::load_with(|name| video.gl_get_proc_address(name) as *const _);
-
     gl::load_with(|name| {
         let pointer = video.gl_get_proc_address(name);
-        println!("{}", name);
+        // println!("{}", name);
         pointer as *const _
     });
 

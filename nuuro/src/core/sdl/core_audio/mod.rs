@@ -12,44 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::PathBuf;
+// use std::path::PathBuf;
 
-use sdl2::mixer::{self, Music};
+//  use sdl2::mixer::{self, Music};
+use rodio::Device;
+
+mod sound_data;
+mod sound_source;
+
+use sound_source::SoundSource;
 
 pub struct CoreAudio {
-    music: Option<Music<'static>>,
-    sounds: Vec<mixer::Chunk>,
+    device: Device,
+    music: Option<SoundSource>,
+    sounds: Vec<SoundSource>,
 }
 
 impl CoreAudio {
     pub(crate) fn new(sound_count: u16) -> CoreAudio {
+        let device = rodio::default_output_device().expect("Error loading audio device");
         let sounds: Vec<_> = (0..sound_count)
-            .map(|id| PathBuf::from(format!("assets/sound{}.ogg", id)))
-            .map(|p| mixer::Chunk::from_file(p).unwrap())
+            .map(|id| {
+                SoundSource::new(&device, &format!("assets/sound{}.ogg", id))
+                    .expect("Error loading audio source.")
+            })
             .collect();
         CoreAudio {
+            device,
             sounds,
             music: None,
         }
     }
 
     pub fn play_sound(&mut self, sound: u16) {
-        mixer::Channel::all()
-            .play(&self.sounds[sound as usize], 0)
-            .unwrap();
+        self.sounds[sound as usize].play(false);
     }
 
-    pub fn play_music(&mut self, music: u16, loops: bool) {
-        let music = &format!("assets/music{}.ogg", music);
+    pub fn play_music(&mut self, music: u16, repeat: bool) {
+        let path = &format!("assets/music{}.ogg", music);
         self.stop_music();
-        let music = mixer::Music::from_file(music).unwrap();
-        music.play(if loops { 1_000_000 } else { 1 }).unwrap();
+        let music = SoundSource::new(&self.device, path).unwrap();
         self.music = Some(music);
+        self.music.as_ref().unwrap().play(repeat);
     }
 
     pub fn stop_music(&mut self) {
-        if self.music.take().is_some() {
-            Music::halt();
+        if self.music.is_some() {
+            self.music.as_mut().unwrap().stop();
         }
     }
 }
