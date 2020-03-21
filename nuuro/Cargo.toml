@@ -15,7 +15,8 @@ byteorder = "1.3.2"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 gl = { path = "lib/gl" }
-sdl2 = { version = "0.33", default-features = false, features = ["image", "unsafe_textures"] }
+glutin = "0.20"
+image = "0.23.2"
 rodio = "0.11.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

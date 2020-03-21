@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// use std::path::PathBuf;
-
-//  use sdl2::mixer::{self, Music};
 use rodio::Device;
 
 mod sound_data;
@@ -30,12 +27,9 @@ pub struct CoreAudio {
 
 impl CoreAudio {
     pub(crate) fn new(sound_count: u16) -> CoreAudio {
-        let device = rodio::default_output_device().expect("Error loading audio device");
+        let device = rodio::default_output_device().unwrap();
         let sounds: Vec<_> = (0..sound_count)
-            .map(|id| {
-                SoundSource::new(&device, &format!("assets/sound{}.ogg", id))
-                    .expect("Error loading audio source.")
-            })
+            .map(|id| SoundSource::new(&device, &format!("assets/sound{}.ogg", id)).unwrap())
             .collect();
         CoreAudio {
             device,
