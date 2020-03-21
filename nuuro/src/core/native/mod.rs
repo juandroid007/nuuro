@@ -54,17 +54,7 @@ macro_rules! nuuro_header {
 pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut app: AP) {
     mark_app_created_flag();
 
-    // #[cfg(target_os = "windows")]
-    // sdl2::hint::set("SDL_RENDER_DRIVER", "opengles2");
-    // let sdl_context = sdl2::init().unwrap();
-    // let video = sdl_context.video().unwrap();
-    // let _sdl_audio = sdl_context.audio().unwrap();
-    // let _mixer_context = mixer_init();
-
-    // mixer_setup();
-    // gl_hints(video.gl_attr());
-
-    // let timer = sdl_context.timer().unwrap();
+    let core_audio = CoreAudio::new(AS::Sound::count());
 
     let mut events_loop = EventsLoop::new();
 
@@ -80,32 +70,13 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
         .with_gl_debug_flag(true)
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 0)))
         .with_gl_profile(glutin::GlProfile::Core)
+        .with_vsync(true)
         .build_windowed(window, &events_loop)
         .unwrap();
     unsafe { gl_context.make_current().unwrap() };
 
     let timer = Instant::now();
 
-    // let window = if info.resizable {
-    //     video
-    //         .window(info.title, info.window_pixels.0, info.window_pixels.1)
-    //         .position_centered()
-    //         .opengl()
-    //         .resizable()
-    //         .build()
-    //         .unwrap()
-    // } else {
-    //     video
-    //         .window(info.title, info.window_pixels.0, info.window_pixels.1)
-    //         .position_centered()
-    //         .opengl()
-    //         .build()
-    //         .unwrap()
-    // };
-
-    // let mut sdl_renderer = window.renderer().accelerated().build().unwrap();
-
-    // init_gl(&video);
     init_gl(&gl_context);
 
     let mut renderer = build_renderer(&info);
@@ -113,7 +84,7 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
     gl_error_check();
 
     let mut ctx = AppContext::new(
-        CoreAudio::new(AS::Sound::count()),
+        core_audio,
         renderer.app_dims(),
         renderer.native_px(),
     );
@@ -125,8 +96,6 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
     app.start(&mut ctx);
 
     let mut clock = AppClock::new(timer, &info);
-
-    // let fullscreen_cfg = Some(Fullscreen::Borderless(events_loop.primary_monitor()));
 
     let mut continuing = true;
 
@@ -145,7 +114,7 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
             gl_context.window().get_inner_size().unwrap().width as u32,
             gl_context.window().get_inner_size().unwrap().height as u32,
         );
-        // let screen_dims = sdl_renderer.window().unwrap().size();
+
         if screen_dims.0 > 0 && screen_dims.1 > 0 {
             renderer.set_screen_dims(screen_dims);
             ctx.set_dims(renderer.app_dims(), renderer.native_px());
@@ -203,29 +172,6 @@ fn build_renderer<AS: AppAssetId>(info: &AppInfo) -> Renderer<AS> {
     Renderer::<AS>::new(render_buffer, core_renderer)
 }
 
-// fn mixer_init() -> Sdl2MixerContext {
-//     match sdl2::mixer::init(INIT_OGG) {
-//         Ok(ctx) => ctx,
-//         // HACK TODO remove special handling once SDL2 mixer 2.0.3 is released
-//         //           (see https://bugzilla.libsdl.org/show_bug.cgi?id=3929 for details)
-//         Err(ref msg) if msg.as_str() == "OGG support not available" => Sdl2MixerContext,
-//         Err(msg) => panic!("sdl2::mixer::init failed: {}", msg),
-//     }
-// }
-
-// fn mixer_setup() {
-//     sdl2::mixer::open_audio(44100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).unwrap();
-//     sdl2::mixer::allocate_channels(4);
-// }
-
-// fn gl_hints(gl_attr: GLAttr) {
-//     // TODO test that this gl_attr code actually does anything
-//     gl_attr.set_context_profile(GLProfile::Core);
-//     gl_attr.set_context_flags().debug().set();
-//     gl_attr.set_context_version(3, 0);
-// }
-
-// fn init_gl(video: &VideoSubsystem) {
 fn init_gl(gl_context: &WindowedContext) {
     gl::load_with(|name| gl_context.get_proc_address(name) as *const _);
 

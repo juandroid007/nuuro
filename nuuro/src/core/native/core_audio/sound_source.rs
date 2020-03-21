@@ -7,7 +7,6 @@ use rodio::Source as RSource;
 use super::sound_data::SoundData;
 
 pub struct SoundSource {
-    // data: io::Cursor<SoundData>,
     sink: rodio::Sink,
     channels: u16,
     samples_rate: u32,
@@ -30,7 +29,6 @@ impl SoundSource {
         let cursor = io::Cursor::new(data);
         let src = Decoder::new(cursor).unwrap();
         Ok(SoundSource {
-            // data,
             sink,
             channels: src.channels(),
             samples_rate: src.sample_rate(),

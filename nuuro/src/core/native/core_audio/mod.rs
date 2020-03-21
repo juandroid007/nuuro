@@ -26,16 +26,10 @@ pub struct CoreAudio {
     device: Device,
     music: Option<SoundSource>,
     sounds: Vec<SoundSource>,
-    // music: Option<Music<'static>>,
-    // sounds: Vec<mixer::Chunk>,
 }
 
 impl CoreAudio {
     pub(crate) fn new(sound_count: u16) -> CoreAudio {
-        // let sounds: Vec<_> = (0..sound_count)
-        //     .map(|id| PathBuf::from(format!("assets/sound{}.ogg", id)))
-        //     .map(|p| mixer::Chunk::from_file(p).unwrap())
-        //     .collect();
         let device = rodio::default_output_device().unwrap();
         let sounds: Vec<_> = (0..sound_count)
             .map(|id| SoundSource::new(&device, &format!("assets/sound{}.ogg", id)).unwrap())
@@ -57,9 +51,6 @@ impl CoreAudio {
         let music = SoundSource::new(&self.device, path).unwrap();
         self.music = Some(music);
         self.music.as_ref().unwrap().play(repeat);
-        // let music = mixer::Music::from_file(music).unwrap();
-        // music.play(if loops { 1_000_000 } else { 1 }).unwrap();
-        // self.music = Some(music);
     }
 
     pub fn stop_music(&mut self) {
