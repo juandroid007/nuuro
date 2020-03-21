@@ -2,4 +2,5 @@
 members = [
     "nuuro",
     "nuuro_build",
+    "nuuro/lib/gl"
 ]
