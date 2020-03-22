@@ -13,8 +13,6 @@ impl Texture {
         let (img, width, height) = match image::open(&Path::new(path)) {
             Err(err) => panic!("Failed to load texure: {:?}", err),
             Ok(img) => {
-                println!("Dimensions of image are {:?}", img.dimensions());
-
                 let (width, height) = img.dimensions();
 
                 let img = match img {

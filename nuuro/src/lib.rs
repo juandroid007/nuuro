@@ -24,6 +24,8 @@
 //! invoking functionality from the sibling crate "nuuro_build".
 //! This will generate texture atlases and enums to reference assets.
 //! See the "nuuro_build" crate for more details.
+//!
+//! You can start with the [nuuro template](https://github.com/juandroid007/nuuro_template).
 
 extern crate byteorder;
 #[cfg(not(target_arch = "wasm32"))]
