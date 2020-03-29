@@ -49,7 +49,7 @@ impl EventHandler {
                             virtual_keycode,
                             ..
                         },
-                        ..
+                    ..
                 } => match state {
                     ElementState::Pressed => {
                         if let Some(keycode) = virtual_keycode {

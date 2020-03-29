@@ -69,7 +69,6 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
     let gl_context = ContextBuilder::new()
         .with_gl_debug_flag(true)
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 0)))
-        .with_gl_profile(glutin::GlProfile::Core)
         .build_windowed(window, &events_loop)
         .unwrap();
     unsafe { gl_context.make_current().unwrap() };
@@ -96,7 +95,7 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
 
     loop {
         events_loop.poll_events(|event| {
-            continuing = event_handler.process_events(event, &mut app, &mut ctx, &renderer);
+            continuing = event_handler.process_events(event, &mut app, &mut ctx, &renderer)
         });
 
         unsafe {
