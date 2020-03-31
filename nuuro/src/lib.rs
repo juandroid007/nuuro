@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Nuuro is a fork of Gate game development library
-//! ([source](https://github.com/SergiusIW/gate))
+//! Nuuro is a specialized game development library.
 //!
 //! When creating a game, it is good practice to make a layer,
 //! specific to one's needs, that separates the
