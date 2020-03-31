@@ -27,11 +27,14 @@
 //!
 //! You can start with the [nuuro template](https://github.com/juandroid007/nuuro_template).
 
+#[macro_use]
+extern crate lazy_static;
 extern crate byteorder;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate glutin;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate image;
+pub extern crate paste;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate rodio;
 #[cfg(target_arch = "wasm32")]
@@ -45,6 +48,7 @@ pub mod asset_id;
 mod core;
 mod input;
 pub mod renderer;
+pub(crate) mod timer;
 pub(crate) mod utils;
 
 #[cfg(target_arch = "wasm32")]
@@ -55,6 +59,7 @@ pub use crate::core::println;
 pub use crate::app_context::{AppContext, Audio};
 pub use crate::app_info::AppInfo;
 pub use crate::input::{KeyCode, TouchPoint};
+pub use crate::timer::Timer;
 
 use crate::asset_id::AppAssetId;
 use crate::renderer::Renderer;

@@ -32,6 +32,7 @@ use crate::renderer::atlas::Atlas;
 use crate::renderer::core_renderer::CoreRenderer;
 use crate::renderer::render_buffer::RenderBuffer;
 use crate::renderer::Renderer;
+use crate::timer;
 use crate::{App, AppContext};
 
 pub struct CoreAudio;
@@ -171,8 +172,9 @@ impl<AS: AppAssetId, AP: App<AS>> TraitAppRunner for AppRunner<AS, AP> {
             .max(0.0)
             .min(0.1);
         if elapsed > 0.0 {
-            self.app
-                .advance(elapsed.min(crate::MAX_TIMESTEP), &mut self.ctx);
+            let normalized_elapsed = elapsed.min(crate::MAX_TIMESTEP);
+            timer::update_all(normalized_elapsed);
+            self.app.advance(normalized_elapsed, &mut self.ctx);
         }
         self.last_time_sec = Some(time_sec);
 

@@ -40,7 +40,7 @@ use crate::renderer::core_renderer::CoreRenderer;
 use crate::renderer::core_renderer::Texture;
 use crate::renderer::render_buffer::RenderBuffer;
 use crate::renderer::Renderer;
-use crate::{App, AppContext};
+use crate::{timer, App, AppContext};
 
 /// Macro to be placed in the `main.rs` file for a Nuuro app.
 ///
@@ -137,7 +137,9 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
         if !continuing {
             break;
         }
-        app.advance(elapsed.min(crate::MAX_TIMESTEP), &mut ctx);
+        let normalized_elapsed = elapsed.min(crate::MAX_TIMESTEP);
+        timer::update_all(normalized_elapsed);
+        app.advance(normalized_elapsed, &mut ctx);
         if ctx.take_close_request() {
             break;
         }

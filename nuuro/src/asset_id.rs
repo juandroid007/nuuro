@@ -43,3 +43,17 @@ pub trait AppAssetId {
     /// Sound asset enum
     type Sound: IdU16;
 }
+
+/// Simple that allow return a tile from a tiled sprite.
+///
+/// First parameter is the name of the `asset_id` generated module, the parameter is
+/// the sprite name, and the third and last parameter are the X and Y coords of the tile on the
+/// sprite.
+#[macro_export]
+macro_rules! tiled_sprite_id {
+    ($enum: expr, $sprite_name:expr, $x:expr, $y:expr) => {
+        $crate::paste::expr! {
+            $enum::[<$sprite_name R $x C $y>]
+        }
+    };
+}
