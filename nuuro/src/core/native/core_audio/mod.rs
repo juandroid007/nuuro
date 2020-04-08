@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use rodio::Device;
-
 mod sound_data;
 mod sound_source;
 
 use sound_source::SoundSource;
 
 pub struct CoreAudio {
-    device: Device,
     playing_music: Option<u16>,
     sounds: Vec<SoundSource>,
     musics: Vec<SoundSource>,
@@ -36,7 +33,6 @@ impl CoreAudio {
             .map(|id| SoundSource::new(&device, &format!("assets/music{}.ogg", id)).unwrap())
             .collect();
         CoreAudio {
-            device,
             sounds,
             playing_music: None,
             musics,
