@@ -21,20 +21,25 @@ use sound_source::SoundSource;
 
 pub struct CoreAudio {
     device: Device,
-    music: Option<SoundSource>,
+    playing_music: Option<u16>,
     sounds: Vec<SoundSource>,
+    musics: Vec<SoundSource>,
 }
 
 impl CoreAudio {
-    pub(crate) fn new(sound_count: u16) -> CoreAudio {
+    pub(crate) fn new(sound_count: u16, musics_count: u16) -> CoreAudio {
         let device = rodio::default_output_device().unwrap();
         let sounds: Vec<_> = (0..sound_count)
             .map(|id| SoundSource::new(&device, &format!("assets/sound{}.ogg", id)).unwrap())
             .collect();
+        let musics: Vec<_> = (0..musics_count)
+            .map(|id| SoundSource::new(&device, &format!("assets/music{}.ogg", id)).unwrap())
+            .collect();
         CoreAudio {
             device,
             sounds,
-            music: None,
+            playing_music: None,
+            musics,
         }
     }
 
@@ -43,16 +48,19 @@ impl CoreAudio {
     }
 
     pub fn play_music(&mut self, music: u16, repeat: bool) {
-        let path = &format!("assets/music{}.ogg", music);
-        self.stop_music();
-        let music = SoundSource::new(&self.device, path).unwrap();
-        self.music = Some(music);
-        self.music.as_ref().unwrap().play(repeat);
+        // let path = &format!("assets/music{}.ogg", music);
+        // self.stop_music();
+        // let music = SoundSource::new(&self.device, path).unwrap();
+        // self.music = Some(music);
+        // self.music.as_ref().unwrap().play(repeat);
+        self.playing_music = Some(music);
+        self.musics[music as usize].play(repeat);
     }
 
     pub fn stop_music(&mut self) {
-        if self.music.is_some() {
-            self.music.as_mut().unwrap().stop();
+        if let Some(music) = self.playing_music {
+            self.musics[music as usize].stop();
+            self.playing_music = None;
         }
     }
 }

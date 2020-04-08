@@ -116,10 +116,10 @@ impl TimerInstance {
     pub fn new(expiration_time: u64, start_active: bool, id: TimerId) -> TimerInstance {
         TimerInstance {
             current_time: if start_active { 0 } else { expiration_time },
-            expiration_time: expiration_time,
+            expiration_time,
             endless: expiration_time == 0,
 
-            id: id,
+            id,
         }
     }
 

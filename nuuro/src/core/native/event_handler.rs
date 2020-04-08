@@ -91,14 +91,10 @@ impl EventHandler {
                     }
                 },
                 WindowEvent::CloseRequested => {
-                    ctx.close();
+                    return false;
                 }
                 _ => (),
             }
-        }
-
-        if ctx.take_close_request() {
-            return false;
         }
         true
     }
@@ -146,6 +142,7 @@ fn glutin_to_nuuro_key(key: VirtualKeyCode) -> Option<KeyCode> {
         VirtualKeyCode::Left => Some(KeyCode::Left),
         VirtualKeyCode::Down => Some(KeyCode::Down),
         VirtualKeyCode::Up => Some(KeyCode::Up),
+        VirtualKeyCode::Escape => Some(KeyCode::Escape),
         VirtualKeyCode::Return => Some(KeyCode::Return),
         VirtualKeyCode::Space => Some(KeyCode::Space),
         VirtualKeyCode::Back => Some(KeyCode::Backspace),

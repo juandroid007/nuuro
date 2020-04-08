@@ -63,6 +63,7 @@ pub enum KeyCode {
     Left,
     Down,
     Up,
+    Escape,
     Return,
     Space,
     Backspace,

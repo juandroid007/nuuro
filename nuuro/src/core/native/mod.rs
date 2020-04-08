@@ -54,7 +54,7 @@ macro_rules! nuuro_header {
 pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut app: AP) {
     mark_app_created_flag();
 
-    let core_audio = CoreAudio::new(AS::Sound::count());
+    let core_audio = CoreAudio::new(AS::Sound::count(), AS::Music::count());
 
     let mut events_loop = EventsLoop::new();
 
@@ -91,11 +91,11 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
 
     let mut clock = AppClock::new(timer, &info);
 
-    let mut continuing = true;
-
     loop {
         events_loop.poll_events(|event| {
-            continuing = event_handler.process_events(event, &mut app, &mut ctx, &renderer)
+            if !event_handler.process_events(event, &mut app, &mut ctx, &renderer) {
+                ctx.close();
+            }
         });
 
         unsafe {
@@ -134,9 +134,6 @@ pub fn run<AS: 'static + AppAssetId, AP: 'static + App<AS>>(info: AppInfo, mut a
             (false, false) | (true, true) => {}
         }
 
-        if !continuing {
-            break;
-        }
         let normalized_elapsed = elapsed.min(crate::MAX_TIMESTEP);
         timer::update_all(normalized_elapsed);
         app.advance(normalized_elapsed, &mut ctx);

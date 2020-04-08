@@ -87,7 +87,7 @@ function nuuro(args) {
         "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         "ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp",
-        "Enter", " ", "Backspace", "Delete"
+        "Escape", "Enter", " ", "Backspace", "Delete"
       ];
       for (var i = 0; i < keycodesArray.length; i++) {
         result[keycodesArray[i]] = i;
@@ -100,6 +100,7 @@ function nuuro(args) {
       for (var i = 0; i < keycodesArray2.length; i++) {
         result[keycodesArray2[i]] = i;
       }
+      console.log(result);
       return result;
     }
 
@@ -415,8 +416,8 @@ function nuuro(args) {
           Module.nuuroWasmOnResize(canvas.width, canvas.height);
           setSpriteAttribPointers();
           requestAnimationFrame(updateAndDraw);
-          document.addEventListener('keydown', e => handleKeyEvent(e.key, true));
-          document.addEventListener('keyup', e => handleKeyEvent(e.key, false));
+          document.addEventListener('keydown', e => handleKeyEvent(e, true));
+          document.addEventListener('keyup', e => handleKeyEvent(e, false));
           canvas.addEventListener('mousemove', e => handleMouseMotion(e));
           canvas.addEventListener('mousedown', e => handleMouseEvent(e, true));
           canvas.addEventListener('mouseup', e => handleMouseEvent(e, false));
@@ -447,10 +448,11 @@ function nuuro(args) {
       } catch(err) { nuuroFail(err); }
     }
 
-    function handleKeyEvent(codeStr, down) {
+    function handleKeyEvent(evt, down) {
       if (Module.currentlyRunning) {
         try {
-          const code = keycodes[codeStr];
+          evt.preventDefault();
+          const code = keycodes[evt.key];
           if (code != undefined) {
             const continuing = Module.nuuroWasmKeyEvent(code, down);
             if (!continuing) {
