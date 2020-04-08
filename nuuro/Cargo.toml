@@ -1,6 +1,6 @@
 [package]
 name = "nuuro"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2018"
 authors = ["Juan Villacorta <juanvillacortac@gmail.com>"]
 description = "A specialized 2D game library"
