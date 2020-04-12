@@ -40,7 +40,8 @@ impl SoundSource {
         SamplesBuffer::new(self.channels, self.samples_rate, self.samples.clone())
     }
 
-    pub fn play(&self, repeat: bool) {
+    pub fn play(&self, volume: f32, repeat: bool) {
+        self.sink.set_volume(volume);
         if repeat {
             let sound = self.to_buffer().repeat_infinite();
             self.sink.append(sound);

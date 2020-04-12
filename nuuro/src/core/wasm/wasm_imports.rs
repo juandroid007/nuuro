@@ -23,9 +23,9 @@ extern "C" {
     pub fn nuuroWasmClear(r: f32, g: f32, b: f32);
     pub fn nuuroWasmDrawSprites(size: usize, data: *const c_void);
 
-    pub fn nuuroWasmPlaySound(id: c_int);
-    pub fn nuuroWasmPlayMusic(id: c_int);
-    pub fn nuuroWasmLoopMusic(id: c_int);
+    pub fn nuuroWasmPlaySound(id: c_int, volume: f32);
+    pub fn nuuroWasmPlayMusic(id: c_int, volume: f32);
+    pub fn nuuroWasmLoopMusic(id: c_int, volume: f32);
     pub fn nuuroWasmStopMusic();
 
     pub fn nuuroWasmSpriteAtlasBinSize() -> usize;

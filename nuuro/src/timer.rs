@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
 
 type TimerId = i64;
 
@@ -84,13 +85,24 @@ impl Timer {
     }
 
     /// Returns the time elapsed since the initialization of the last timer cycle.
-    pub fn elapsed(&self) -> u64 {
+    pub fn elapsed(&self) -> Duration {
         TIMERS_INSTANCES
             .lock()
             .unwrap()
             .get(&self.id)
             .unwrap()
             .elapsed()
+    }
+
+    /// Returns the time elapsed since the initialization of the last timer cycle
+    /// as milliseconds.
+    pub fn elapsed_as_millis(&self) -> u64 {
+        TIMERS_INSTANCES
+            .lock()
+            .unwrap()
+            .get(&self.id)
+            .unwrap()
+            .elapsed_as_millis()
     }
 }
 
@@ -142,7 +154,11 @@ impl TimerInstance {
         !self.active()
     }
 
-    pub fn elapsed(&self) -> u64 {
+    pub fn elapsed(&self) -> Duration {
+        Duration::from_millis(self.elapsed_as_millis())
+    }
+
+    pub fn elapsed_as_millis(&self) -> u64 {
         self.current_time
     }
 

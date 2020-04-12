@@ -218,18 +218,27 @@ pub struct Audio<A: AppAssetId> {
 
 impl<A: AppAssetId> Audio<A> {
     /// Plays the given sound effect once.
-    pub fn play_sound(&mut self, sound: A::Sound) {
-        self.core.play_sound(sound.id_u16());
+    ///
+    /// The volume value `1.0` is the "normal" volume (unfiltered input).
+    /// Any value other than `1.0` will multiply each sample by this value.
+    pub fn play_sound(&mut self, sound: A::Sound, volume: f32) {
+        self.core.play_sound(sound.id_u16(), volume);
     }
 
     /// Plays the given music once, replacing the currently playing music, if any.
-    pub fn play_music(&mut self, music: A::Music) {
-        self.core.play_music(music.id_u16(), false);
+    ///
+    /// The volume value `1.0` is the "normal" volume (unfiltered input).
+    /// Any value other than `1.0` will multiply each sample by this value.
+    pub fn play_music(&mut self, music: A::Music, volume: f32) {
+        self.core.play_music(music.id_u16(), volume, false);
     }
 
     /// Continually loops the given music, replacing the currently playing music, if any.
-    pub fn loop_music(&mut self, music: A::Music) {
-        self.core.play_music(music.id_u16(), true);
+    ///
+    /// The volume value `1.0` is the "normal" volume (unfiltered input).
+    /// Any value other than `1.0` will multiply each sample by this value.
+    pub fn loop_music(&mut self, music: A::Music, volume: f32) {
+        self.core.play_music(music.id_u16(), volume, true);
     }
 
     /// Stops the currently playing music, if any.

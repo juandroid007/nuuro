@@ -153,20 +153,22 @@ function nuuro(args) {
           gl.drawArrays(gl.TRIANGLES, 0, size / 28);
           gl.disable(gl.SCISSOR_TEST);
         },
-        nuuroWasmLoopMusic: function (id) {
+        nuuroWasmLoopMusic: function (id, volume) {
           if (Module.currentMusic != null) {
             Module.currentMusic.stop();
           }
           Module.currentMusic = Module.musics[id];
           Module.currentMusic.loop(true);
+          Module.currentMusic.volume(volume);
           Module.currentMusic.play();
         },
-        nuuroWasmPlayMusic: function (id) {
+        nuuroWasmPlayMusic: function (id, volume) {
           if (Module.currentMusic != null) {
             Module.currentMusic.stop();
           }
           Module.currentMusic = Module.musics[id];
           Module.currentMusic.loop(false);
+          Module.currentMusic.volume(volume);
           Module.currentMusic.play();
         },
         nuuroWasmStopMusic: function () {
@@ -175,7 +177,8 @@ function nuuro(args) {
             Module.currentMusic = null;
           }
         },
-        nuuroWasmPlaySound: function (id) {
+        nuuroWasmPlaySound: function (id, volume) {
+          Module.sounds[id].volume(volume);
           Module.sounds[id].play();
         },
         nuuroWasmSpriteAtlasBinSize: function () {

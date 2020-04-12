@@ -39,18 +39,13 @@ impl CoreAudio {
         }
     }
 
-    pub fn play_sound(&mut self, sound: u16) {
-        self.sounds[sound as usize].play(false);
+    pub fn play_sound(&mut self, sound: u16, volume: f32) {
+        self.sounds[sound as usize].play(volume, false);
     }
 
-    pub fn play_music(&mut self, music: u16, repeat: bool) {
-        // let path = &format!("assets/music{}.ogg", music);
-        // self.stop_music();
-        // let music = SoundSource::new(&self.device, path).unwrap();
-        // self.music = Some(music);
-        // self.music.as_ref().unwrap().play(repeat);
+    pub fn play_music(&mut self, music: u16, volume: f32, repeat: bool) {
         self.playing_music = Some(music);
-        self.musics[music as usize].play(repeat);
+        self.musics[music as usize].play(volume, repeat);
     }
 
     pub fn stop_music(&mut self) {

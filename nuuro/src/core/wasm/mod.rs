@@ -38,17 +38,17 @@ use crate::{App, AppContext};
 pub struct CoreAudio;
 
 impl CoreAudio {
-    pub fn play_sound(&mut self, id: u16) {
+    pub fn play_sound(&mut self, id: u16, volume: f32) {
         unsafe {
-            nuuroWasmPlaySound(id as c_int);
+            nuuroWasmPlaySound(id as c_int, volume);
         }
     }
-    pub fn play_music(&mut self, id: u16, loops: bool) {
+    pub fn play_music(&mut self, id: u16, volume: f32, loops: bool) {
         unsafe {
             if loops {
-                nuuroWasmLoopMusic(id as c_int);
+                nuuroWasmLoopMusic(id as c_int, volume);
             } else {
-                nuuroWasmPlayMusic(id as c_int);
+                nuuroWasmPlayMusic(id as c_int, volume);
             }
         }
     }
